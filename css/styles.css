@@ -2,17 +2,18 @@ body {
     font-family: Arial;
 }
 
-.circuit_input {
+.circuit_input, .load_input {
   width: 80px;
 }
 
-.groupCheckBox {
+.groupCheckBox, .loadCheckBox {
   width: 10px;
   align-items: center;
   margin-right: 20px;
 }
 
-#groupSelect {
+#groupSelect,
+#loadSelect {
   width: 40px;
 }
 
@@ -183,19 +184,21 @@ select, input {
     width: 500px;
 }
 
-#cableTable {
+#cableTable,
+#loadTable {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
 }
 
-#cableTable th  {
+#cableTable th, #loadTable th  {
     border: 1px solid #ddd;
     border-collapse: collapse;
     font-size: 12px;
     background-color: #BFBFBF
 }
 
-#cableTable td  {
+#cableTable td,
+#loadTable td  {
     border: 1px solid #ddd;
     border-collapse: collapse;
     font-size: 12px;
@@ -204,31 +207,55 @@ select, input {
     line-height: 1;
 }
 
-#cableTable tr:nth-child(even) {
+#cableTable tr,
+#loadTable tr {
   background-color: #f9f9f9; /* light gray or any color you prefer */
 }
 
-#cableTable input {
+#cableTable tr:nth-child(even),
+#loadTable tr:nth-child(even) {
+  background-color: #f9f9f9; /* light gray or any color you prefer */
+}
+
+/*
+#cableTable input,
+#loadTable input {
     border: 1px solid #f1f1f1;
     font-size: 12px;
     /* width: 75px; */
     box-sizing: border-box;
 }
+*/
 
-#cableTable input,
-#cableTable select {
-    height: 1.8em;
+
+#cableTable select,
+#loadTable select {
+    height: 1.5em;
     font-size: 12px;
     margin: 0;
     padding: 0px 4px;
     box-sizing: border-box;
 }
 
-#cableTable input:not([disabled]):not([class="optional"])[type="number"] {
+#loadTable input,
+#cableTable input {
+    height: 1.5em;
+    font-size: 12px;
+    margin: 0;
+    padding: 0px 4px;
+    box-sizing: border-box;
+}
+
+#cableTable input:not([disabled]):not([class="optional"])[type="number"],
+#loadTable input:not([disabled]):not([class="optional"])[type="number"] {
     /* width: 75px; */
     background-color : #FFFFCC;
     border-color: #f1f1f1;
     border-width: thin; 
+}
+
+.description {
+    padding: 0px 4px;
 }
 
 #cableCalcsMainTable th {

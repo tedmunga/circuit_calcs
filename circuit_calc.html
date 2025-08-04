@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Circuit Diagram Builder</title>
+<!--
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+-->
+  <script src="lib/p5.min.js"></script>
   <script src="js/log.js"></script>
   <link rel="stylesheet" href="./css/styles.css">
   <style>
@@ -63,6 +66,14 @@
                 <label>R(Ω): <input class=circuit_input id="groupCableR" type="number" value="" disabled></label>
                 <label>X(Ω): <input class=circuit_input id="groupCableX" type="number" value="" disabled></label>
               </div>
+              <div id="loadSelector">
+                <label>Use Load: <input class=loadCheckBox id="loadCheckBox" type="checkbox"></label>
+                  <select id="loadSelect">
+                    <option value="" disabled>-- Select --</option>
+                </select>
+                <label>R(Ω): <input class=load_input id="loadR" type="number" value="" disabled></label>
+                <label>X(Ω): <input class=load_input id="loadX" type="number" value="" disabled></label>
+              </div>
             </div>
         </div>
         <div id="canvas-container"></div>
@@ -85,8 +96,8 @@
         <div class="controls">
           <button onclick="CableTab.addCableRow()">Add Cable</button>
           <button onclick="CableTab.saveConfig()">Save Config</button>
-          <input type="file" id="configLoader" style="display:none;" onchange="CableTab.loadConfig(event)">
-          <button onclick="document.getElementById('configLoader').click()">Load Config</button>
+          <input type="file" id="cableConfigLoader" style="display:none;" onchange="CableTab.loadConfig(event)">
+          <button onclick="document.getElementById('cableConfigLoader').click()">Load Config</button>
         </div>
 
         <table id="cableTable">
@@ -98,12 +109,12 @@
               <th>Size</th>
               <th>Type</th>
               <th>Temp</th>
-              <th>R</th>
+              <th>R(Ω)</th>
               <th>Formation Type</th>
               <th>Insulation</th>
-              <th>X</th>
-              <th>Total R</th>
-              <th>Total X</th>
+              <th>X(Ω)</th>
+              <th>Total R(Ω)</th>
+              <th>Total X(Ω)</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -112,8 +123,28 @@
     </div>
 
     <div id="tab3" class="tab-content">
-      <h2>Tab 3 Content</h2>
-      <p>This is the content of Tab 3.</p>
+        <script src="js/tab3.js"></script>
+        
+        <h2>Cable Selection Table</h2>
+
+        <div class="controls">
+          <button onclick="LoadTab.addLoadRow()">Add Load</button>
+          <button onclick="LoadTab.saveConfig()">Save Config</button>
+          <input type="file" id="loadConfigLoader" style="display:none;" onchange="LoadTab.loadConfig(event)">
+          <button onclick="document.getElementById('loadConfigLoader').click()">Load Config</button>
+        </div>
+
+        <table id="loadTable">
+          <thead>
+            <tr>
+              <th>Load ID</th>
+              <th>Description</th>
+              <th>R(Ω)</th>
+              <th>X(Ω)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
     </div>
 
   <script>

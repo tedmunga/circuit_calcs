@@ -15,10 +15,28 @@ function updateGroupDropdownFromTable() {
     }
   });
 }
+
+function updateLoadDropdownFromTable() {
+  const table = document.getElementById('loadTable');
+  const select = document.getElementById('loadSelect');
+  const rows = table.querySelectorAll('tbody tr');
+
+  select.innerHTML = '<option value="">-- Select --</option>';
+
+  rows.forEach(row => {
+    const loadId = row.cells[0].textContent.trim();
+    if (loadId) {
+      const option = document.createElement('option');
+      option.value = loadId;
+      option.textContent = loadId;
+      select.appendChild(option);
+    }
+  });
+}
     
 document.getElementById('groupSelect').addEventListener('change', (e) => {
   const selectedId = e.target.value;
-  log('debug', 'select value is: ', e.target.value);
+  logger('debug', 'groupSelect value is: ', e.target.value);
   const table = document.getElementById('cableTable');
   const rows = table.querySelectorAll('tbody tr');
 
@@ -27,7 +45,7 @@ document.getElementById('groupSelect').addEventListener('change', (e) => {
     if (row.cells[0].textContent.trim() === selectedId) {
       document.getElementById('groupCableR').value = row.cells[10].textContent.trim();
       document.getElementById('groupCableX').value = row.cells[11].textContent.trim();
-      log('debug', 'found value is: ', e.target.value);
+      logger('debug', 'found value is: ', selectedId);
       found = true;
     }
   });
@@ -35,6 +53,30 @@ document.getElementById('groupSelect').addEventListener('change', (e) => {
   if (!found) {
     document.getElementById('groupCableR').value = '';
     document.getElementById('groupCableX').value = '';
+  }
+  updateComponentParameters();
+});
+
+document.getElementById('loadSelect').addEventListener('change', (e) => {
+  const selectedId = e.target.value;
+  logger('debug', 'loadSelect value is: ', e.target.value);
+  const table = document.getElementById('loadTable');
+  const rows = table.querySelectorAll('tbody tr');
+
+  let found = false;
+  rows.forEach(row => {
+    if (row.cells[0].textContent.trim() === selectedId) {
+      document.getElementById('loadR').value = row.cells[2].querySelector('input.resistance').value;
+      document.getElementById('loadX').value = row.cells[3].querySelector('input.reactance').value;
+      logger('debug', 'load id found value is: ', selectedId);
+      found = true;
+    }
+  });
+
+  if (!found) {
+    document.getElementById('loadR').value = '';
+    document.getElementById('loadX').value = '';
+    logger('debug', 'found value is: ', e.target.value);
   }
   updateComponentParameters();
 });
@@ -203,7 +245,9 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
       console.log('getNextUnusedNodeId returning. Next Node ID:', nextId);
       return nextId;
     }
+    
 //==============================================================================
+
     function getNextUnusedComponentId() {
       let usedIds = new Set();
       for (let comp of componentMap.values()) {
@@ -216,6 +260,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
       console.log('getNextUnusedComponentId returning. Next Component ID:', nextId);
       return nextId;
     }
+    
 //==============================================================================
 
     function setMode(newMode) {
@@ -362,7 +407,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
 
     function mousePressed(event) {
       if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height){
-          log('debug', 'MousePressed: 361 returning');
+          logger('debug', 'MousePressed: 361 returning');
            return;
       }
       let gridX = Math.round(mouseX / 20) * 20;
@@ -371,7 +416,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
       if (event.target.tagName === 'BUTTON' || 
           event.target.tagName === 'INPUT'  ||
           event.target.tagName === 'SELECT'){
-          log('debug', 'MousePressed: 368 returning', event.target.tagName);
+          logger('debug', 'MousePressed: 368 returning', event.target.tagName);
           return;
     }
       let clickedNodeComponent = components.find(c =>
@@ -387,7 +432,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
         }
         dragging = true;
         selectedComponent.nodesMoved = true;
-        log('debug', `MousePressed: 384 Selected C${selectedComponent.index}, draggingNode N${nodeMap.get(draggingNode)} at (${draggingNode.x}, ${draggingNode.y})`);
+        logger('debug', `MousePressed: 384 Selected C${selectedComponent.index}, draggingNode N${nodeMap.get(draggingNode)} at (${draggingNode.x}, ${draggingNode.y})`);
         document.getElementById('vMag').value = selectedComponent.params.voltage || 0;
         document.getElementById('vAngle').value = selectedComponent.params.angle || 0;
         document.getElementById('resistance').value = selectedComponent.params.resistance || 0;
@@ -400,11 +445,11 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
         let centerY = c.y;
         return Math.abs(centerX - mouseX) < 20 && Math.abs(centerY - mouseY) < 20;
       });
-log('debug', 'MousePressed: 397 ', event.target.tagName);
+logger('debug', 'MousePressed: 397 ', event.target.tagName);
 
       if (selectedComponent && mode === 'select') {
         dragging = true;
-        log('debug', `MousePressed: Selected C${selectedComponent.index} for drag at center (${selectedComponent.x}, ${selectedComponent.y})`);
+        logger('debug', `MousePressed: Selected C${selectedComponent.index} for drag at center (${selectedComponent.x}, ${selectedComponent.y})`);
         document.getElementById('vMag').value = selectedComponent.params.voltage || 0;
         document.getElementById('vAngle').value = selectedComponent.params.angle || 0;
         document.getElementById('resistance').value = selectedComponent.params.resistance || 0;
@@ -429,7 +474,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
             reactance: 0,
             group: 0
           };
-          log('debug', `Creating 421 voltage component with params:`, params);
+          logger('debug', `Creating 421 voltage component with params:`, params);
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
           newComponent.endNode.isGround = true;
           components.push(newComponent);
@@ -448,7 +493,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
                 ? parseInt(document.getElementById('groupSelect').value) || 0 
                 : 0
           };
-          log('debug', `Creating ${mode} component with params:`, params);
+          logger('debug', `Creating ${mode} component with params:`, params);
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
           components.push(newComponent);
         } else if (mode === 'connection') {
@@ -464,7 +509,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           componentMap.set(c.index, c);
         });
         selectedComponent = newComponent;
-        log('debug', "new selected Component");
+        logger('debug', "new selected Component");
         mode = 'select';
         redraw();
       }
@@ -478,7 +523,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       if (draggingNode && selectedComponent) {
         draggingNode.x = gridX;
         draggingNode.y = gridY;
-//        log('debug', `MouseDragged: Moving N${nodeMap.get(draggingNode)} to (${gridX}, ${gridY})`);
+//        logger('debug', `MouseDragged: Moving N${nodeMap.get(draggingNode)} to (${gridX}, ${gridY})`);
         let nearbyNode = nodes.find(n => n !== draggingNode && Math.abs(n.x - gridX) < 10 && Math.abs(n.y - gridY) < 10);
         if (nearbyNode) {
           let isGround = draggingNode.isGround || nearbyNode.isGround;
@@ -486,11 +531,11 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           components.forEach(comp => {
             if (comp.startNode === draggingNode) {
               comp.startNode = nearbyNode;
-//              log('debug', `Updated C${comp.index} start to N${nearbyNode.nodeId}`);
+//              logger('debug', `Updated C${comp.index} start to N${nearbyNode.nodeId}`);
             }
             if (comp.endNode === draggingNode) {
               comp.endNode = nearbyNode;
-//              log('debug', `Updated C${comp.index} end to N${nearbyNode.nodeId}`);
+//              logger('debug', `Updated C${comp.index} end to N${nearbyNode.nodeId}`);
             }
           });
           // Transfer connections
@@ -505,10 +550,10 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           if (nodeMap.has(draggingNode.nodeId) && nodeMap.get(draggingNode.nodeId) !== draggingNode) {
             draggingNode.nodeId = getNextUnusedNodeId(nodeMap);
             nodeMap.set(draggingNode.nodeId, draggingNode);
-//            log('debug', `Reassigned N${nearbyNode.nodeId} to N${draggingNode.nodeId} due to conflict`);
+//            logger('debug', `Reassigned N${nearbyNode.nodeId} to N${draggingNode.nodeId} due to conflict`);
           }
           updateNodeMap();
-//          log('debug', `Merged N${draggingNode.nodeId} into N${nearbyNode.nodeId}`);
+//          logger('debug', `Merged N${draggingNode.nodeId} into N${nearbyNode.nodeId}`);
         }
       } else if (selectedComponent && mode === 'select') {
         let dx = gridX - selectedComponent.x;
@@ -523,7 +568,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           selectedComponent.startNode.y += dy;
           // Check for nearby nodes after move
           let nearbyStart = nodes.find(n => n !== selectedComponent.startNode && Math.abs(n.x - selectedComponent.startNode.x) < 10 && Math.abs(n.y - selectedComponent.startNode.y) < 10);
-          if (nearbyStart) log('debug', `Warning: Start node at (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}) is near N${nearbyStart.nodeId}`);
+          if (nearbyStart) logger('debug', `Warning: Start node at (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}) is near N${nearbyStart.nodeId}`);
         }
 
         // Check if endNode is shared
@@ -533,10 +578,10 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           selectedComponent.endNode.y += dy;
           // Check for nearby nodes after move
           let nearbyEnd = nodes.find(n => n !== selectedComponent.endNode && Math.abs(n.x - selectedComponent.endNode.x) < 10 && Math.abs(n.y - selectedComponent.endNode.y) < 10);
-          if (nearbyEnd) log('debug', `Warning: End node at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is near N${nearbyEnd.nodeId}`);
+          if (nearbyEnd) logger('debug', `Warning: End node at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is near N${nearbyEnd.nodeId}`);
         }
 
-//        log('debug', `MouseDragged: Moved C${selectedComponent.index} to (${gridX}, ${gridY}), start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
+//        logger('debug', `MouseDragged: Moved C${selectedComponent.index} to (${gridX}, ${gridY}), start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
         updateNodeMap();
       }
       redraw();
@@ -546,25 +591,25 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       dragging = false;
       draggingNode = null;
       if (selectedComponent) {
-//        log('debug', `MouseReleased: Finalizing C${selectedComponent.index}, start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
+//        logger('debug', `MouseReleased: Finalizing C${selectedComponent.index}, start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
       }
       redraw();
     }
     
     function disconnectSelectedNode() {
-      log('debug' , "=== Starting disconnectSelectedNode for selectedComponent ===");
+      logger('debug' , "=== Starting disconnectSelectedNode for selectedComponent ===");
       if (!selectedComponent) {
-        log('debug' , "No selectedComponent, exiting disconnectSelectedNode");
+        logger('debug' , "No selectedComponent, exiting disconnectSelectedNode");
         return;
       }
 
-      log('debug' , `Checking if C${selectedComponent.index} has shared nodes with other components`);
+      logger('debug' , `Checking if C${selectedComponent.index} has shared nodes with other components`);
       let isShared = components.some(other => 
         other !== selectedComponent && 
         ((other.startNode === selectedComponent.startNode) || (other.endNode === selectedComponent.startNode) ||
          (other.startNode === selectedComponent.endNode) || (other.endNode === selectedComponent.endNode))
       );
-      log('debug' , `isShared: ${isShared}`);
+      logger('debug' , `isShared: ${isShared}`);
 
       if (isShared) {
         let newStartNode = null;
@@ -573,68 +618,68 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
         let compCenterX = selectedComponent.x;
         let compCenterY = selectedComponent.y;
         const offset = 30;
-        log('debug' , `Component center: (${compCenterX}, ${compCenterY}), offset: ${offset}`);
+        logger('debug' , `Component center: (${compCenterX}, ${compCenterY}), offset: ${offset}`);
 
         // Handle start node
-        log('debug' , "Checking if start node is shared");
+        logger('debug' , "Checking if start node is shared");
         if (components.some(other => other !== selectedComponent && (other.startNode === selectedComponent.startNode || other.endNode === selectedComponent.startNode))) {
-          log('debug' , `Start node N${selectedComponent.startNode.nodeId} at (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}) is shared`);
+          logger('debug' , `Start node N${selectedComponent.startNode.nodeId} at (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}) is shared`);
           let newNodeId = getNextUnusedNodeId();
-          log('debug' , `Assigned new nodeId: ${newNodeId} for new start node`);
+          logger('debug' , `Assigned new nodeId: ${newNodeId} for new start node`);
           newStartNode = new Node(compCenterX + offset, compCenterY, selectedComponent.startNode.isGround, newNodeId);
-          log('debug' , `Created newStartNode with ID ${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})`);
+          logger('debug' , `Created newStartNode with ID ${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})`);
           nodes.push(newStartNode);
           updateNodeMap();
-          log('debug' , `Added newStartNode to nodes, current nodes length: ${nodes.length}`);
+          logger('debug' , `Added newStartNode to nodes, current nodes length: ${nodes.length}`);
           selectedComponent.startNode.connectedNodeList.delete(selectedComponent.endNode);
-          log('debug' , `Removed endNode N${selectedComponent.endNode.nodeId} from startNode's connectedNodeList`);
+          logger('debug' , `Removed endNode N${selectedComponent.endNode.nodeId} from startNode's connectedNodeList`);
           newStartNode.connectedNodeList.add(selectedComponent.endNode);
-          log('debug' , `Added endNode N${selectedComponent.endNode.nodeId} to newStartNode's connectedNodeList`);
+          logger('debug' , `Added endNode N${selectedComponent.endNode.nodeId} to newStartNode's connectedNodeList`);
           selectedComponent.startNode = newStartNode;
-          log('debug' , `Updated selectedComponent.startNode to N${newStartNode.nodeId}`);
+          logger('debug' , `Updated selectedComponent.startNode to N${newStartNode.nodeId}`);
         }
 
         // Handle end node
-        log('debug' , "Checking if end node is shared");
+        logger('debug' , "Checking if end node is shared");
         if (components.some(other => other !== selectedComponent && (other.startNode === selectedComponent.endNode || other.endNode === selectedComponent.endNode))) {
-          log('debug' , `End node N${selectedComponent.endNode.nodeId} at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is shared`);
+          logger('debug' , `End node N${selectedComponent.endNode.nodeId} at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is shared`);
           let newNodeId = getNextUnusedNodeId();
-          log('debug' , `Assigned new nodeId: ${newNodeId} for new end node`);
+          logger('debug' , `Assigned new nodeId: ${newNodeId} for new end node`);
           newEndNode = new Node(compCenterX - offset, compCenterY, selectedComponent.endNode.isGround, newNodeId);
-          log('debug' , `Created newEndNode with ID ${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})`);
+          logger('debug' , `Created newEndNode with ID ${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})`);
           nodes.push(newEndNode);
           updateNodeMap();
-          log('debug' , `Added newEndNode to nodes, current nodes length: ${nodes.length}`);
+          logger('debug' , `Added newEndNode to nodes, current nodes length: ${nodes.length}`);
           selectedComponent.endNode.connectedNodeList.delete(selectedComponent.startNode);
-          log('debug' , `Removed startNode N${selectedComponent.startNode.nodeId} from endNode's connectedNodeList`);
+          logger('debug' , `Removed startNode N${selectedComponent.startNode.nodeId} from endNode's connectedNodeList`);
           newEndNode.connectedNodeList.add(selectedComponent.startNode);
-          log('debug' , `Added startNode N${selectedComponent.startNode.nodeId} to newEndNode's connectedNodeList`);
+          logger('debug' , `Added startNode N${selectedComponent.startNode.nodeId} to newEndNode's connectedNodeList`);
           selectedComponent.endNode = newEndNode;
-          log('debug' , `Updated selectedComponent.endNode to N${newEndNode.nodeId}`);
+          logger('debug' , `Updated selectedComponent.endNode to N${newEndNode.nodeId}`);
         }
 
         // Update draggingNode if it was one of the replaced nodes
         if (draggingNode === selectedComponent.startNode || draggingNode === selectedComponent.endNode) {
           draggingNode = (draggingNode === selectedComponent.startNode) ? newStartNode : newEndNode;
-          log('debug' , `Updated draggingNode to N${draggingNode.nodeId}`);
+          logger('debug' , `Updated draggingNode to N${draggingNode.nodeId}`);
         }
 
-        log('debug' , `Disconnected C${selectedComponent.index}: ${newStartNode ? `New start N${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})` : ''} ${newEndNode ? `New end N${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})` : ''}, original nodes remain`);
+        logger('debug' , `Disconnected C${selectedComponent.index}: ${newStartNode ? `New start N${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})` : ''} ${newEndNode ? `New end N${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})` : ''}, original nodes remain`);
       } else {
-        log('debug' , `C${selectedComponent.index}: No shared nodes, no disconnection needed`);
+        logger('debug' , `C${selectedComponent.index}: No shared nodes, no disconnection needed`);
       }
 
-      log('debug' , "Updating nodeMap");
+      logger('debug' , "Updating nodeMap");
 
-      log('debug' , "Redrawing canvas");
+      logger('debug' , "Redrawing canvas");
       redraw();
-      log('debug' , "=== Finished disconnectSelectedNode ===");
+      logger('debug' , "=== Finished disconnectSelectedNode ===");
     }
     
     
 
     function updateNodeMap() {
-        log('debug' , 'updateNodeMap called');
+        logger('debug' , 'updateNodeMap called');
       let needsRebuild = false;
       nodes.forEach((n) => {
         if (!nodeMap.has(n)) {
@@ -644,18 +689,24 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       if (needsRebuild || nodeMap.size !== nodes.length) {
         nodeMap.clear();
         if (nodes === null || nodes === undefined ) {
-            log('debug' , 'nodes is either null || undefined');
+            logger('debug' , 'nodes is either null || undefined');
         }
         nodes.forEach((n) => nodeMap.set(n.nodeId, n));
-        log('debug' , `updateNodeMap: Rebuilt nodeMap with ${nodes.length} nodes`);
+        logger('debug' , `updateNodeMap: Rebuilt nodeMap with ${nodes.length} nodes`);
         if (nodeMap === null || nodeMap === undefined ) {
-            log('debug' , 'nodeMap is either null || undefined');
+            logger('debug' , 'nodeMap is either null || undefined');
         }
       } else {
-//        log('debug' , `updateNodeMap: No changes needed, nodeMap unchanged`);
+//        logger('debug' , `updateNodeMap: No changes needed, nodeMap unchanged`);
       }
     }
-
+    
+/*
+ * 
+ * 
+ * 
+ * 
+ */
     function calculateCircuit() {
       nodes.forEach(n => {
         n.voltage = null;
@@ -663,96 +714,46 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       });
       components.forEach(c => c.current = null);
 
-      // Clear existing maps
-      nodeMap.clear();
- //     componentMap.clear();
-
-      // Identify grounds and initialize traversal
+      // Identify grounds and set their voltages to complex zero (0)
       let groundNodes = nodes.filter(n => n.isGround);
-      let referenceGround = groundNodes[0];
-      let unvisitedNodes = new Set(nodes);
-      groundNodes.forEach(gn => unvisitedNodes.delete(gn));
-      let orderedNodes = [referenceGround, ...groundNodes.slice(1)]; // Include all grounds first
+      groundNodes.forEach(n => n.voltage = complex(0, 0));
+      
+      // Identify the non ground nodes
+      let nonGroundNodes = nodes.filter(n => !n.isGround);
 
       // Collect voltage sources
       let voltageSources = components.filter(c => c.type === 'voltage');
       if (voltageSources.length === 0) {
-        log('debug' , 'No voltage source found, skipping calculation');
+        logger('debug' , 'No voltage source found, skipping calculation');
         showResults = false;
         redraw();
         return;
       }
 
-      // Traverse using BFS from each voltage source's high-potential node
-      let visitedNodes = new Set(groundNodes);
-      let queue = [];
-      voltageSources.forEach(vs => {
-        let startNode = vs.startNode;
-        if (!visitedNodes.has(startNode)) {
-          queue.push(startNode);
-          while (queue.length > 0) {
-            let currentNode = queue.shift();
-            if (!visitedNodes.has(currentNode)) {
-              visitedNodes.add(currentNode);
-              orderedNodes.push(currentNode);
-              currentNode.connectedNodeList.forEach(nextNode => {
-                if (!visitedNodes.has(nextNode)) queue.push(nextNode);
-              });
-            }
-          }
-        }
-      });
+      // Map the non ground nodes into the Map
+      nonGroundNodeMap = new Map();
+      nonGroundNodes.forEach((n, i) => nonGroundNodeMap.set(n, i));
 
-      // Ensure all unvisited nodes are included (handle disconnected parts)
-      unvisitedNodes.forEach(node => {
-        if (!visitedNodes.has(node)) {
-          orderedNodes.push(node);
-          visitedNodes.add(node);
-        }
-      });
-
-      // Assign final node indices after traversal
-      orderedNodes.forEach((n, i) => nodeMap.set(n, i)); // Ground at 0, others follow
-      let totalVars = nodeMap.size + voltageSources.length; // 18 nodes + 3 voltage currents
+      let totalVars = nonGroundNodeMap.size + voltageSources.length; // 18 nodes + 3 voltage currents
       let Y = Array(totalVars).fill().map(() => Array(totalVars).fill(complex(0, 0)));
       let I = Array(totalVars).fill(complex(0, 0));
 
       log('info', `Initialized Y matrix size: ${totalVars} x ${totalVars}`);
       log('info', `Initialized I vector size: ${totalVars}`);
 
-      // Log ordered nodes and their connections for debugging
-      log('debug', 'Ordered nodes:', orderedNodes.map((n, i) => `N${i}: nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
-      console.log('Node connections:');
-      nodes.forEach(n => {
-        let idx = nodeMap.get(n);
-        let connections = Array.from(n.connectedNodeList).map(cn => nodeMap.get(cn) || 'unmapped').join(', ');
-//        log('debug', `Node N${idx}: nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, connected to [${connections}]`);
-      });
-
-      // Set ground constraints for all ground nodes
-      groundNodes.forEach(ground => {
-        let idx = nodeMap.get(ground);
-        if (idx !== undefined) {
-          log('debug', `Setting ground node N${idx}: Y[${idx}][${idx}] = 1+j0`);
-          Y[idx][idx] = complex(1, 0); // Ground constraint
-        }
-      });
-
       console.log('Building the Y matrix');
-
-      let matlabCompLines = [];
-      // Build Y matrix with adjusted indices
+      logger('debug', `Components size: ${components.length}`);
       components.forEach(c => {
 
-        let i = nodeMap.get(c.startNode);
-        let j = nodeMap.get(c.endNode);
+        let i = nonGroundNodeMap.get(c.startNode);
+        let j = nonGroundNodeMap.get(c.endNode);
         let vs = polarToComplex(c.params.voltage, c.params.angle);
 
-        if (i !== undefined && j !== undefined) {
+
           let resistance = c.params.resistance;
           let reactance = c.params.reactance || 0;
           if (resistance === 0 && reactance === 0 && c.type !== 'voltage' && c.type !== 'connection') {
-              log('debug', `setting small resistance = 1e-6 for Component C${c.index} (Type: ${c.type})`);
+              logger('debug', `setting small resistance = 1e-6 for Component C${c.index} (Type: ${c.type})`);
             resistance = 1e-6; // Only for conductor/load, not connection 
           }
           let impedance = complex(resistance, reactance);
@@ -761,55 +762,61 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
             // Ideal short: enforce V[i] = V[j] by adding large admittance
             admittance = complex(1e12, 0); // High conductance to force equal voltages
             resistance = 1e-12;
-            log('debug', `Connection C${c.index}: Treating as ideal short with Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
+            logger('debug', `Connection C${c.index}: Treating as ideal short with Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
           } else {
-            log('debug', `Component C${c.index} (Type: ${c.type}) Y[${i}][${j}]`);
-//            log('debug', `Component C${c.index} (Type: ${c.type}): Z = ${resistance}+j${reactance} Ω, Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
+            logger('debug', `Component C${c.index} (Type: ${c.type}) Y[${i}][${j}]`);
+            logger('debug', `Component C${c.index} (Type: ${c.type}): Z = ${resistance}+j${reactance} Ω, Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
           }
           
-          matlabCompLines.push(`    struct('id', ${c.index}, 'voltage', ${vs.re} + (${vs.im}) * 1j, 'resistance', ${resistance}, 'reactance', ${reactance}, 'nodes', [${i}, ${j}]), ...`);
-        
+//          matlabCompLines.push(`    struct('id', ${c.index}, 'voltage', ${vs.re} + (${vs.im}) * 1j, 'resistance', ${resistance}, 'reactance', ${reactance}, 'nodes', [${i}, ${j}]), ...`);
+
+        if (i !== undefined) {
           Y[i][i] = cadd(Y[i][i], admittance);
-//          log('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${i}]`);
+          logger('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${i}]`);
+        }
+        if (j !== undefined) {
           Y[j][j] = cadd(Y[j][j], admittance);
-//          log('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${j}]`);
-          Y[i][j] = csub(Y[i][j], admittance);
-//          log('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${j}]`);
-          Y[j][i] = csub(Y[j][i], admittance);
-//          log('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${i}]`);
+          logger('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${j}]`);
+        }
           
-          log('debug', `Current Y[${i}][${j}] = ${Y[i][j].re.toFixed(1)}+j${Y[i][j].im.toFixed(1)} S`);
+        if (i !== undefined && j !== undefined) {
+          Y[i][j] = csub(Y[i][j], admittance);
+          logger('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${j}]`);
+          Y[j][i] = csub(Y[j][i], admittance);
+          logger('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${i}]`);
+          
+          logger('debug', `Current Y[${i}][${j}] = ${Y[i][j].re.toFixed(1)}+j${Y[i][j].im.toFixed(1)} S`);
         }
       });
-      
-      let matlabComp = 'components = [ ...\n' + matlabCompLines.join('\n') + '\n];';
-      log('debug', matlabComp);
       
       // Apply voltage source constraint
       voltageSources.forEach((vs, idx) => {
-        let vsIdx = nodeMap.size + idx; // Start after node indices
-        let startIdx = nodeMap.get(vs.startNode);
-        let endIdx = nodeMap.get(vs.endNode);
+          logger('debug', `Voltage ${idx}`);
+        let vsIdx = nonGroundNodeMap.size + idx; // Start after node indices
+        let startIdx = nonGroundNodeMap.get(vs.startNode);
+        let endIdx = nonGroundNodeMap.get(vs.endNode);
         let complexOne = complex(1, 0);
         let complexNegOne = complex(-1, 0);
-        if (startIdx !== undefined && endIdx !== undefined) {
-          log('debug', `Applying voltage source C${vs.index}: Y[${startIdx}][${vsIdx}] = 1+j0, Y[${endIdx}][${vsIdx}] = -1+j0, Y[${vsIdx}][${startIdx}] = 1+j0, Y[${vsIdx}][${endIdx}] = -1+j0`);
+        if (startIdx !== undefined) {
           Y[startIdx][vsIdx] = complexOne;
-          Y[endIdx][vsIdx] = complexNegOne;
           Y[vsIdx][startIdx] = complexOne;
-          Y[vsIdx][endIdx] = complexNegOne;
-          I[vsIdx] = polarToComplex(vs.params.voltage, vs.params.angle);
+          logger('debug', `Applying voltage source C${vs.index}: Y[${startIdx}][${vsIdx}] = 1+j0, Y[${vsIdx}][${startIdx}] = 1+j0`);
         }
+        if (endIdx !== undefined) {
+          logger('debug', `Applying voltage source C${vs.index}: Y[${endIdx}][${vsIdx}] = -1+j0, Y[${vsIdx}][${endIdx}] = -1+j0`);
+          Y[endIdx][vsIdx] = complexNegOne;
+          Y[vsIdx][endIdx] = complexNegOne;
+        }
+        I[vsIdx] = polarToComplex(vs.params.voltage, vs.params.angle);
       });
 
-      log('debug', 'Final Y matrix:', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
+      logger('debug', 'Final Y matrix:', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
       for (let i = 0; i < totalVars; i++) {
         let rowSum = complex(0, 0);
         for (let j = 0; j < totalVars; j++) rowSum = cadd(rowSum, Y[i][j]);
       }
-      log('debug', 'Final I vector:', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
+      logger('debug', 'Final I vector:', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
 
-      // print Y & I to the console.
 //    printCircuitMatrix(Y, I);
       
       
@@ -819,82 +826,77 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
         V = Array(totalVars).fill(complex(0, 0));
       }
 
-      // Enforce ground voltage (0V) for all ground nodes
-      groundNodes.forEach(ground => {
-        let idx = nodeMap.get(ground);
-        if (idx !== undefined) {
-          V[idx] = complex(0, 0);
-          log('debug', `Enforced V[${idx}] = 0∠0° V for ground node N${idx}`);
-        }
-      });
-
       if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
         console.error('Invalid V vector detected');
         showResults = false;
         redraw();
         return;
       }
-//      log('debug', 'Raw V vector:', V.map(v => `${v.re.toFixed(6)}+j${v.im.toFixed(6)}`));
+      logger('info', 'Raw V vector:', V.map(v => `${v.re.toFixed(6)}+j${v.im.toFixed(6)}`));
+        
+      let testResults = ['\n'];
       
-      log('debug', 'Using showSignedZero:');
-      log('debug', 'Raw V vector:', V.map(v => `${showSignedZero(v.re)}+j${showSignedZero(v.im)}`));
-      
-        //~ V.forEach((v, i) => {
-          //~ console.log(`V[${i}].re:`, v.re, 'is -0?', Object.is(v.re, -0));
-        //~ });
-        
-        //~ V.forEach((v, i) => {
-          //~ console.log(`V[${i}].re:`, v.re, 'is 0?', Object.is(v.re, 0));
-        //~ });
-        
-        
       nodes.forEach(n => {
-        let idx = nodeMap.get(n);
+        let idx = nonGroundNodeMap.get(n);
         if (idx !== undefined) {
           n.voltage = V[idx] || complex(0, 0);
           let [mag, angle] = complexToPolar(n.voltage);
-        log('debug', `Node N${n.nodeId} voltage = ${mag.toFixed(6)}∠${angle.toFixed(6)}° V`);
+          testResults.push(`N${n.nodeId} ${n.voltage.re.toFixed(12)} + j${n.voltage.im.toFixed(12)}`);
+        } else {
+          n.voltage = complex(0, 0);
+          testResults.push(`N${n.nodeId} ${n.voltage.re.toFixed(12)} + j${n.voltage.im.toFixed(12)}`);
         }
       });
-
+      
       voltageSources.forEach((c, idx) => {
-        let k = nodeMap.size + idx;
-        let startIdx = nodeMap.get(c.startNode);
-        let endIdx = nodeMap.get(c.endNode);
-        if (startIdx !== undefined && endIdx !== undefined) {
-          c.current = V[k];
-          let [mag, angle] = complexToPolar(c.current);
-//          log('debug', `Voltage source C${c.index} current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
-        }
+        let k = nonGroundNodeMap.size + idx;
+        let startIdx = nonGroundNodeMap.get(c.startNode);
+        let endIdx = nonGroundNodeMap.get(c.endNode);
+        c.current = V[k];
+        let [mag, angle] = complexToPolar(c.current);
+        logger('debug', `Voltage source C${c.index} current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
+        testResults.push(`C${c.index} ${c.current.re.toFixed(12)} + j${c.current.im.toFixed(12)}`);
       });
 
+      testResultsString = testResults.join('\n')
+      logger('test', testResultsString);
+            
       components.forEach(c => {
-          let i = nodeMap.get(c.startNode);
-          let j = nodeMap.get(c.endNode);
-        if ((c.type === 'conductor' || c.type === 'load' || c.type === 'connection') && i !== undefined && j !== undefined) {
+          let i = nonGroundNodeMap.get(c.startNode);
+          let j = nonGroundNodeMap.get(c.endNode);
+          let startVoltage = 0;
+          let endVoltage = 0;
+        if ((c.type === 'conductor' || c.type === 'load' || c.type === 'connection')) {
 
+          let resistance = c.params.resistance;
+          let reactance = c.params.reactance || 0;
+          if (resistance === 0 && reactance === 0) {
+            resistance = 1e-9; // Only for conductor/load, not connection
+          }
+          let Z = complex(resistance, reactance);
+            
           if (i !== undefined && j !== undefined) {
-            let resistance = c.params.resistance;
-            let reactance = c.params.reactance || 0;
-            if (resistance === 0 && reactance === 0 && c.type !== 'voltage') {
-              resistance = 1e-6; // Only for conductor/load, not connection
-            }
-            let Z = complex(resistance, reactance);
+
             let V_diff = getPositiveVoltageDrop(V[i], V[j]);
-//          log('debug', `Component C${c.index} (${c.type}): Nodes ${i} to ${j}, V[${i}] = ${V[i].re.toFixed(1)}+j${V[i].im.toFixed(1)} V, V[${j}] = ${V[j].re.toFixed(1)}+j${V[j].im.toFixed(1)} V, V_diff = ${V_diff.re.toFixed(1)}+j${V_diff.im.toFixed(1)} V, Z = ${resistance.toFixed(1)}+j${reactance.toFixed(1)} Ω`);
+            logger('debug', `Component C${c.index} (${c.type}): Nodes ${i} to ${j}, V[${i}] = ${V[i].re.toFixed(1)}+j${V[i].im.toFixed(1)} V, V[${j}] = ${V[j].re.toFixed(1)}+j${V[j].im.toFixed(1)} V, V_diff = ${V_diff.re.toFixed(3)}+j${V_diff.im.toFixed(3)} V, Z = ${resistance.toFixed(3)}+j${reactance.toFixed(3)} Ω`);
             c.current = cdiv(V_diff, Z);
             let [mag, angle] = complexToPolar(c.current);
-//          log('debug', `Component C${c.index} (${c.type}) current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
+            logger('debug', `Component C${c.index} (${c.type}) current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
+            
+          } else {
+              
+              startVoltage = (i !== undefined) ? V[i] : complex(0,0);
+              endVoltage = (j !== undefined) ? V[j] : complex(0,0);
+              logger('debug', `Component C${c.index} startVoltage ${startVoltage.re.toFixed(6)}+j${startVoltage.im.toFixed(6)}V, endVoltage ${endVoltage.re.toFixed(6)}+j${endVoltage.im.toFixed(6)}V`);
+
+              let V_diff = getPositiveVoltageDrop(startVoltage, endVoltage);
+              c.current = cdiv(V_diff, Z);
+              let [mag, angle] = complexToPolar(c.current);
+              logger('debug', `Component C${c.index} (${c.type}): Nodes ${c.startNode.nodeId} to ${c.endNode.nodeId}, V[${i}] = ${startVoltage.re.toFixed(6)}+j${startVoltage.im.toFixed(6)} V, V[${j}] = ${endVoltage.re.toFixed(6)}+j${endVoltage.im.toFixed(6)} V, V_diff = ${V_diff.re.toFixed(6)}+j${V_diff.im.toFixed(6)} V, Z = ${resistance.toFixed(6)}+j${reactance.toFixed(6)} Ω`);
+              logger('debug', `Component C${c.index} (${c.type}) current = ${mag.toFixed(3)}∠${angle.toFixed(3)}° A`);
           }
         }
       });
-
-      // Log all nodes with attributes for debugging
-      //~ console.log('All nodes with attributes:');
-      //~ nodes.forEach(n => {
-        //~ let idx = nodeMap.get(n);
-      //~ console.log(`Node: nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}, voltage=${n.voltage ? `${n.voltage.re.toFixed(1)}+j${n.voltage.im.toFixed(1)}` : 'null'}, nodeMapIndex=${idx !== undefined ? `N${idx}` : 'undefined'}`);
-      //~ });
 
       showResults = true;
       redraw();
@@ -979,6 +981,9 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       return augmented.map(row => row[n] || complex(0, 0));
     }
 
+//##############################################################################
+
+
     async function saveConfig() {
       let config = {
         nodes: nodes.map(n => ({ x: n.x, y: n.y, isGround: n.isGround, nodeId: n.nodeId !== null ? n.nodeId : nodes.indexOf(n) })),
@@ -993,7 +998,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           endNode: { nodeId: c.endNode.nodeId !== null ? c.endNode.nodeId : nodes.indexOf(c.endNode) }
         }))
       };
-      log('debug', 'Nodes before download:', nodes.map((n, i) => `N${i}: isGround=${n.isGround}, x=${n.x}, y=${n.y}, nodeId=${n.nodeId}`));
+      logger('debug', 'Nodes before download:', nodes.map((n, i) => `N${i}: isGround=${n.isGround}, x=${n.x}, y=${n.y}, nodeId=${n.nodeId}`));
       let data = JSON.stringify(config, null, 2);
       try {
         const blob = new Blob([data], { type: 'application/json' });
@@ -1003,7 +1008,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        log('debug', 'Download initiated, check for circuit_config.json');
+        logger('debug', 'Download initiated, check for circuit_config.json');
         if (window.showSaveFilePicker) {
           const handle = await showSaveFilePicker({
             suggestedName: 'circuit_config.json',
@@ -1015,7 +1020,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           const writable = await handle.createWritable();
           await writable.write(data);
           await writable.close();
-          log('debug', 'File also saved via dialog (optional)');
+          logger('debug', 'File also saved via dialog (optional)');
         }
       } catch (error) {
         console.error('Download failed:', error);
@@ -1023,31 +1028,43 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
       }
     }
 
+
+
     function loadConfig(event) {
       let file = event.target.files[0];
       if (!file) return;
       let reader = new FileReader();
       reader.onload = function(e) {
         let config = JSON.parse(e.target.result);
-        nodes = config.nodes.map((n, index) => {
+          nodes = config.nodes.map((n, index) => {
           if (n.nodeId === undefined) {
             console.error(`Node ID undefined: ${index}`);
             return null;
           }
           let nodeId = n.nodeId ;
           let node = new Node(n.x, n.y, n.isGround, nodeId);
-          nodeMap.set(nodeId, node);
+          nodeMap.set(node, index);
           return node;
         });
         components = config.components.map(c => {
           let startNodeId = c.startNode.nodeId;
           let endNodeId = c.endNode.nodeId;
-          let startNode = nodeMap.get(startNodeId);
-          let endNode = nodeMap.get(endNodeId);
+          let startNode = null;
+          let endNode = null;
+          nodes.forEach((n, i) => {
+            if (startNodeId === n.nodeId){
+                startNode = n;
+            }
+            if (endNodeId === n.nodeId){
+                endNode = n;
+            }
+          });
+          
           if (!startNode || !endNode) {
             console.error(`Node ID mismatch: componentId=${c.componentId}, startNodeId=${startNodeId}, endNodeId=${endNodeId}`);
             return null; // Skip invalid components
           }
+          
           let newComponent = new Component(c.x, c.y, c.type, c.params, startNode, endNode);
           newComponent.rotation = c.rotation;
           // Populate connectedNodeList for both nodes
@@ -1062,7 +1079,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
           c.index = i;
           componentMap.set(c.index, c);
         });
-        log('debug', 'Loaded nodes:', nodes.map(n => `nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
+        logger('debug', 'Loaded nodes:', nodes.map(n => `nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
         document.getElementById('configFile').value = '';
         redraw();
       };
@@ -1088,7 +1105,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
         let label = i < nodeCount ? `N${i}` : `I_C${i - nodeCount} (${I[i].re.toFixed(1)} V source)`;
         return `  complex(${val.re.toFixed(1)}, ${val.im.toFixed(1)}),  // ${label}`;
       }).join("\n");
-      log('debug', 
+      logger('debug', 
         `// Manually construct Y matrix (${totalVars}x${totalVars} for ${nodeCount} nodes + 1 voltage source current)\n` +
         `let Y = [\n` +
         `${yRows}\n` +
@@ -1102,7 +1119,7 @@ log('debug', 'MousePressed: 397 ', event.target.tagName);
 
     
     function testMNA() {
-      log('debug', "Running MNA Test...");
+      logger('debug', "Running MNA Test...");
 
       
       
@@ -1170,18 +1187,18 @@ let I = [
   complex(-115.0, 199.2),  // I_C0 (-115.0 V source)
 ];
 
-      log('debug', "Test Y matrix:");
-      log('debug', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
-      log('debug', "Test I vector:");
-      log('debug', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
+      logger('debug', "Test Y matrix:");
+      logger('debug', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
+      logger('debug', "Test I vector:");
+      logger('debug', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
 
       // Solve the system
       let V = solveLinearSystem(Y, I);
       if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
         console.error("Solve failed, Y matrix may be singular or ill-conditioned. Initial V:", V);
       } else {
-        log('debug', "Solved V vector:");
-        log('debug', V.map(v => `${v.re.toFixed(1)}+j${v.im.toFixed(1)}`));
+        logger('debug', "Solved V vector:");
+        logger('debug', V.map(v => `${v.re.toFixed(1)}+j${v.im.toFixed(1)}`));
 
       }
     }   

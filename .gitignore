@@ -5,10 +5,12 @@ node_modules/
 *.log
 
 # Ignore build/output folders (if you have any)
+lib/
 dist/
 utils/
 build/
 config/
+testing/
 simulation/
 
 # Ignore OS or editor files
