@@ -2,9 +2,44 @@
 const LoadTab = {
 
     loadCounter: 1,
+    powerInput: null,
+    pfInput: null,
+    resistanceInput: null,
+    reactanceInput: null,
+    voltageInput: null,
     
     init(){
         this.loadCounter = 1;
+        this.voltageInput = document.getElementById('voltage');
+        this.powerInput = document.getElementById('power');
+        this.pfInput = document.getElementById('power_factor');
+        this.resistanceInput = document.getElementById('resistance_2');
+        this.reactanceInput = document.getElementById('reactance_2');
+        
+        [this.voltageInput, this.powerInput, this.pfInput, this.resistanceInput, this.reactanceInput].forEach(input => {
+            input.addEventListener('change', (event) => {
+              const changedInput = event.target;
+              console.log(`${changedInput.id} changed to`, changedInput.value);
+              
+              const P = parseFloat(this.powerInput.value.trim());
+              const pf = parseFloat(this.pfInput.value.trim());
+              const V = parseFloat(this.voltageInput.value.trim());
+                
+              if (isNaN(P) || isNaN(pf) || isNaN(V)){
+                return;
+              }
+                
+              if (P > 0 && pf > 0 && V > 0) {
+                const R = (V ** 2 * pf) / P;
+                const X = (V ** 2 * Math.sqrt(1 - pf ** 2)) / P;
+                console.log(`R = ${R.toFixed(2)} Ω, X = ${X.toFixed(2)} Ω`);
+                this.resistanceInput.value = R.toFixed(2);
+                this.reactanceInput.value =  X.toFixed(2);
+              } else {
+                console.warn("Please enter valid numbers for power, power factor, and voltage.");
+              }
+            });
+        });
     },
 
     addLoadRow(data = null) {
@@ -30,6 +65,14 @@ const LoadTab = {
       row.querySelectorAll('select, input').forEach(el => {
         el.addEventListener('change', () => LoadTab.updateRow(row));
       });
+    },
+    
+    addLoadToTable(){
+        const data = {
+            R: this.resistanceInput.value,
+            X: this.reactanceInput.value
+        };
+        LoadTab.addLoadRow(data);
     },
 
     updateRow(row) {
@@ -92,4 +135,5 @@ const LoadTab = {
       reader.readAsText(file);
       updateLoadDropdownFromTable();
     }
+
 };

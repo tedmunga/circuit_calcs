@@ -123,15 +123,24 @@
     </div>
 
     <div id="tab3" class="tab-content">
-        <script src="js/tab3.js"></script>
         
-        <h2>Cable Selection Table</h2>
+        <h2>Load Selection Table</h2>
 
-        <div class="controls">
-          <button onclick="LoadTab.addLoadRow()">Add Load</button>
-          <button onclick="LoadTab.saveConfig()">Save Config</button>
-          <input type="file" id="loadConfigLoader" style="display:none;" onchange="LoadTab.loadConfig(event)">
-          <button onclick="document.getElementById('loadConfigLoader').click()">Load Config</button>
+        <div class="controls" style="display: flex;">
+           <div style="flex: 2;">
+              <button onclick="LoadTab.addLoadRow()">Add Load</button>
+              <button onclick="LoadTab.saveConfig()">Save Config</button>
+              <input type="file" id="loadConfigLoader" style="display:none;" onchange="LoadTab.loadConfig(event)">
+              <button onclick="document.getElementById('loadConfigLoader').click()">Load Config</button>
+          </div>
+          <div style="flex: 3; text-align: right;">
+            <button onclick="LoadTab.addLoadToTable()">Add Load to Table</button>
+            <label>Voltage (V): <input class=load_input id="voltage" type="number" value="230"></label>
+            <label>Power (W): <input class=load_input id="power" type="number" value="0"></label>
+            <label>Power Factor: <input class=load_input id="power_factor" type="number" value="0.9"></label>
+            <label>Resistance (Ω): <input class=load_input id="resistance_2" type="number" value="0" disabled></label>
+            <label>Reactance (Ω): <input class=load_input id="reactance_2" type="number" value="0" disabled></label>
+          </div>
         </div>
 
         <table id="loadTable">
@@ -146,9 +155,10 @@
           <tbody></tbody>
         </table>
     </div>
-
+    <script src="js/tab3.js"></script>
+    
   <script>
-
+    LoadTab.init();
   </script>
 </body>
 </html>
