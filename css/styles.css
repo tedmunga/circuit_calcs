@@ -6,11 +6,19 @@ body {
   width: 80px;
 }
 
-.resistance_input, .reactance_input{
-width: 20px;
+.resistance_th, .reactance_th {
+  width: 10%;
+  text-align: center;
 }
-.id, .check{
-width: 40px;
+.resistance, .reactance {
+  width: 100%;
+  text-align: center;
+}
+.l_id, .l_check{
+  width: 5%;
+}
+.l_id_td, .l_check_td, .c_id_td, .c_check_td {
+  text-align: center;
 }
 .groupCheckBox, .loadCheckBox {
   width: 10px;
@@ -99,9 +107,8 @@ html, body {
 
 #controls { position: absolute; top: 10px; left: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; }
 button { margin: 5px; padding: 5px 10px; }
-canvas { display: block; }
 #configFile { display: none; }
-canvas { font-family: Arial, sans-serif; font-weight: normal; }
+canvas { display: block; font-family: Arial, sans-serif; font-weight: normal; }
 
 table {
   border-collapse: collapse;
@@ -133,7 +140,6 @@ input {
   width: 100%;
   margin: 0;
 }
-
 
 .description {
   width: 100%;

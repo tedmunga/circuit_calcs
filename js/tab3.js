@@ -1,7 +1,6 @@
 
 const LoadTab = {
 
-    loadCounter: 1,
     powerInput: null,
     pfInput: null,
     resistanceInput: null,
@@ -9,7 +8,6 @@ const LoadTab = {
     voltageInput: null,
     
     init(){
-        this.loadCounter = 1;
         this.voltageInput = document.getElementById('voltage');
         this.powerInput = document.getElementById('power');
         this.pfInput = document.getElementById('power_factor');
@@ -54,15 +52,14 @@ const LoadTab = {
       const tbody = document.querySelector('#loadTable tbody');
       const row = document.createElement('tr');
 
-      logger('info', "loadCounter: ", this.loadCounter);
-      const loadId = data?.loadId ?? this.loadCounter++;
+      const loadId = data?.loadId ?? LoadTab.getFirstAvailableLoadId();
       const description = data?.description || "";
       const R = data?.R || 0;
       const X = data?.X || 0;
 
       row.innerHTML = `
-        <td><input type="checkbox" class="row-select"></td>
-        <td>${loadId}</td>
+        <td class="l_check_td"><input type="checkbox" class="row-select"></td>
+        <td class="l_id_td">${loadId}</td>
         <td><input type="text" class="description" value="${description}"></td>
         <td><input type="number" class="resistance" value="${R}"></td>
         <td><input type="number" class="reactance" value="${X}"></td>
@@ -75,6 +72,18 @@ const LoadTab = {
       row.querySelectorAll('select, input').forEach(el => {
         el.addEventListener('change', () => LoadTab.updateRow(row));
       });
+    },
+
+
+    getFirstAvailableLoadId() {
+      const rows = document.querySelectorAll('#loadTable tbody tr');
+      const ids = new Set(Array.from(rows).map(row => parseInt(row.children[1].textContent, 10)));
+
+      let candidate = 1;
+      while (ids.has(candidate)) {
+        candidate++;
+      }
+      return candidate;
     },
 
 
@@ -97,7 +106,7 @@ const LoadTab = {
           row.remove();
         }
       });
-      LoadTab.updateRow(row);
+      LoadTab.updateRow();
       
     },
 
@@ -105,7 +114,7 @@ const LoadTab = {
     getJsonData() {
       const rows = [...document.querySelectorAll('#loadTable tbody tr')];
       const data = rows.map(row => ({
-//        loadId: row.cells[0].textContent,
+        loadId: row.cells[1].textContent,
         description: row.querySelector('.description').value,
         R: row.querySelector('.resistance').value,
         X: row.querySelector('.reactance').value,
@@ -114,7 +123,7 @@ const LoadTab = {
       return data;
     },
 
-    updateRow(row) {
+    updateRow() {
 
       const data = LoadTab.getJsonData();
       localStorage.setItem('loadConfig', JSON.stringify(data));
@@ -150,7 +159,6 @@ const LoadTab = {
           const tbody = document.querySelector('#loadTable tbody');
           tbody.innerHTML = '';
           data.forEach(d => LoadTab.addLoadRow(d));
-          this.loadCounter = Math.max(...data.map(row => row.loadId)) + 1;
           logger('debug', "load data", data);
         } catch (err) {
           console.error('Error parsing JSON file:', err); // Logs full error to browser console

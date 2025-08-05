@@ -1,10 +1,7 @@
 
 const CableTab = {
-
-    groupCounter: 1,
     
     init(){
-        this.groupCounter = 1;
         
         const data = JSON.parse(localStorage.getItem('cableConfig') || "[]");
         data.forEach(d => CableTab.addCableRow(d));
@@ -25,7 +22,7 @@ const CableTab = {
       const forms = Object.keys(table_30[sizes[0]]);
       const insulations = Object.keys(table_30[sizes[0]][forms[0]]);
 
-      const groupId = data?.groupId ?? this.groupCounter++;
+      const groupId = data?.groupId ?? CableTab.getFirstAvailableCableId();
       const description = data?.description || "";
       const length = data?.length || '';
       const size = data?.size || sizes[0];
@@ -35,8 +32,8 @@ const CableTab = {
       const insulation = data?.insulation || insulations[0];
 
       row.innerHTML = `
-        <td><input type="checkbox" class="row-select"></td>
-        <td>${groupId}</td>
+        <td class="c_check_td"><input type="checkbox" class="row-select"></td>
+        <td class="c_id_td">${groupId}</td>
         <td><input type="text" class="description" value="${description}"></td>
         <td><input type="number" class="length" value="${length}"></td>
         <td>
@@ -68,6 +65,19 @@ const CableTab = {
       });
     },
 
+
+    getFirstAvailableCableId() {
+      const rows = document.querySelectorAll('#cableTable tbody tr');
+      const ids = new Set(Array.from(rows).map(row => parseInt(row.children[1].textContent, 10)));
+
+      let candidate = 1;
+      while (ids.has(candidate)) {
+        candidate++;
+      }
+      return candidate;
+    },    
+
+
     deleteCableRows(){
       const tbody = document.querySelector('#cableTable tbody');
       const rows = tbody.querySelectorAll('tr');
@@ -78,14 +88,23 @@ const CableTab = {
           row.remove();
         }
       });
-      CableTab.updateRow(row);
+      CableTab.saveUpdatedTable();
       
+    },
+    
+    saveUpdatedTable(){
+      // Save the data to localStorage so the user doesn't lose work from a 
+      // Browser shutdown etc.
+      const data = CableTab.getJsonData();
+      localStorage.setItem('cableConfig', JSON.stringify(data));
+      // Update the dropdown list on Tab 1.
+      updateGroupDropdownFromTable();
     },
 
     getJsonData() {
       const rows = [...document.querySelectorAll('#cableTable tbody tr')];
       const data = rows.map(row => ({
-//        groupId: row.cells[0].textContent,
+        groupId: row.cells[1].textContent,
         description: row.querySelector('.description').value,
         length: row.querySelector('.length').value,
         size: row.querySelector('.size').value,
@@ -115,11 +134,7 @@ const CableTab = {
       row.querySelector('.total-r').textContent = (R * length/1000).toFixed(3);
       row.querySelector('.total-x').textContent = (X * length/1000).toFixed(3);
       
-      // Save the data to localStorage so the user doesn't lose work from a 
-      // Browser shutdown etc.
-      const data = CableTab.getJsonData();
-      localStorage.setItem('cableConfig', JSON.stringify(data));
-      updateGroupDropdownFromTable();
+      CableTab.saveUpdatedTable();
     },
 
 
@@ -145,7 +160,6 @@ const CableTab = {
           const tbody = document.querySelector('#cableTable tbody');
           tbody.innerHTML = '';
           data.forEach(d => CableTab.addCableRow(d));
-          this.groupCounter = Math.max(...data.map(row => row.groupId)) + 1;
 
         } catch (err) {
           console.error('Error parsing JSON file:', err); // Logs full error to browser console

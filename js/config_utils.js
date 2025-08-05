@@ -44,7 +44,7 @@ function applyConfig(config) {
     const endNode = nodeMap.get(c.endNode.nodeId);
     if (!startNode || !endNode) return null;
 
-    const comp = new Component(c.x, c.y, c.type, c.params, startNode, endNode);
+    const comp = new Component(c.x, c.y, c.type, c.params, startNode, endNode, c.componentId);
     comp.rotation = c.rotation;
     startNode.addConnectedNode(endNode);
     endNode.addConnectedNode(startNode);

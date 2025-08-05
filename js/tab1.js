@@ -136,7 +136,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         this.y = y;
         this.voltage = null;
         this.isGround = isGround;
-        this.nodeId = ( nodeId === null ) ? getNextUnusedNodeId() : nodeId;
+        this.nodeId = (nodeId === null) ? getNextUnusedNodeId() : nodeId;
         this.connectedNodeList = new Set(); // Track connected nodes
       }
 
@@ -157,7 +157,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     }
 
     class Component {
-      constructor(x, y, type, params, startNode, endNode) {
+      constructor(x, y, type, params, startNode, endNode, index = null) {
         this.x = x;
         this.y = y;
         this.type = type;
@@ -167,7 +167,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         this.rotation = 0;
         this.nodesMoved = false;
         this.current = null;
-        this.index = null;
+        this.index = (index === null) ? getNextUnusedComponentId() : index;
       }
       draw() {
         // Set stroke color for the line based on selection
