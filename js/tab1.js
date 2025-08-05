@@ -7,6 +7,8 @@
     let dragging = false;
     let draggingNode = null;
     let showResults = false;
+    let showNodeIds = false;
+    let showComponentIds = false;
     let nodeMap = new Map();
     let componentMap = new Map();
     let phaseColourMap = new Map([
@@ -152,7 +154,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         fill(0);
         textSize(8);
         textAlign(LEFT, BOTTOM);
-        text(`N${this.nodeId}`, this.x + 3, this.y - 3);
+        if (showNodeIds){
+          text(`N${this.nodeId}`, this.x + 3, this.y - 3);
+        }
       }
     }
 
@@ -194,7 +198,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           fill(selectedComponent === this ? 'white' : textColour);
           textSize(8);
           textAlign(CENTER, CENTER);
-          text(`C${this.index}`, 0, 0); // Index at center
+          if (showComponentIds) {
+            text(`C${this.index}`, 0, 0); // Index at center
+          }
           fill(0);
           textSize(8);
           textAlign(CENTER, BOTTOM);
@@ -206,7 +212,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           fill(255);
           textSize(8);
           textAlign(CENTER, CENTER);
-          text(`C${this.index}`, 0, 0); // Index at center
+          if (showComponentIds) {
+            text(`C${this.index}`, 0, 0); // Index at center
+          }
           fill(0);
           textSize(8);
           textAlign(CENTER, BOTTOM);
@@ -226,7 +234,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           noStroke();   
           textSize(8);
           textAlign(CENTER, CENTER);
-          text(`C${this.index}`, 0, -5); // Index slightly below center
+          if (showComponentIds) {
+            text(`C${this.index}`, 0, -5); // Index slightly below center
+          }
           fill(0);
           textSize(8);
           textAlign(CENTER, TOP);
@@ -248,6 +258,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     // fixing of the json file with known large ID values that weren't 
     // used.
     function getNextUnusedNodeId() {
+      showNodeIds = !showNodeIds;
       let usedIds = new Set();
       for (let node of nodeMap.values()) {
         usedIds.add(node.nodeId);
@@ -257,6 +268,25 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         nextId++;
       }
       console.log('getNextUnusedNodeId returning. Next Node ID:', nextId);
+      redraw();
+      
+      return nextId;
+    }
+    
+//==============================================================================
+
+    function getNextUnusedComponentId() {
+      showComponentIds = !showComponentIds;
+      let usedIds = new Set();
+      for (let comp of componentMap.values()) {
+        usedIds.add(comp.index);
+      }
+      let nextId = 0;
+      while (usedIds.has(nextId)) {
+        nextId++;
+      }
+      console.log('getNextUnusedComponentId returning. Next Component ID:', nextId);
+      redraw();
       return nextId;
     }
     
@@ -267,21 +297,6 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
              !(Array.isArray(cfg.components) && cfg.components.length > 0);
     }
 
-
-    function getNextUnusedComponentId() {
-      let usedIds = new Set();
-      for (let comp of componentMap.values()) {
-        usedIds.add(comp.index);
-      }
-      let nextId = 0;
-      while (usedIds.has(nextId)) {
-        nextId++;
-      }
-      console.log('getNextUnusedComponentId returning. Next Component ID:', nextId);
-      return nextId;
-    }
-    
-//==============================================================================
 
     function setMode(newMode) {
       mode = newMode;
@@ -348,6 +363,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       dragging = false;
       draggingNode = null;
       showResults = false;
+      showNodeIds = false;
       document.getElementById('vMag').value = mode === 'voltage' ? document.getElementById('vMag').value || '' : '0';
       document.getElementById('vAngle').value = mode === 'voltage' ? document.getElementById('vAngle').value || '' : '0';
       document.getElementById('resistance').value = (mode === 'conductor' || mode === 'load') ? document.getElementById('resistance').value || '0' : '0';
@@ -367,6 +383,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     
     function toggleResults() {
       showResults = !showResults;
+      showNodeIds = !showNodeIds;
       redraw();
     }
 

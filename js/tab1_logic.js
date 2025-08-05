@@ -77,6 +77,7 @@
       if (voltageSources.length === 0) {
         logger('debug' , 'No voltage source found, skipping calculation');
         showResults = false;
+        showNodeIds = false;
         redraw();
         return;
       }
@@ -176,6 +177,7 @@
       if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
         console.error('Invalid V vector detected');
         showResults = false;
+        showNodeIds = false;
         redraw();
         return;
       }
@@ -246,6 +248,7 @@
       });
 
       showResults = true;
+      showNodeIds = true;
       redraw();
     }
 
