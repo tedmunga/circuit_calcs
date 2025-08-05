@@ -61,6 +61,7 @@ const LoadTab = {
       const X = data?.X || 0;
 
       row.innerHTML = `
+        <td><input type="checkbox" class="row-select"></td>
         <td>${loadId}</td>
         <td><input type="text" class="description" value="${description}"></td>
         <td><input type="number" class="resistance" value="${R}"></td>
@@ -83,6 +84,21 @@ const LoadTab = {
             X: this.reactanceInput.value
         };
         LoadTab.addLoadRow(data);
+    },
+    
+    
+    deleteCableRows(){
+      const tbody = document.querySelector('#loadTable tbody');
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+        const checkbox = row.querySelector('.row-select');
+        if (checkbox?.checked) {
+          row.remove();
+        }
+      });
+      LoadTab.updateRow(row);
+      
     },
 
 

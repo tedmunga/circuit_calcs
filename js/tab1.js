@@ -1,39 +1,30 @@
-function updateGroupDropdownFromTable() {
-  const table = document.getElementById('cableTable');
-  const select = document.getElementById('groupSelect');
-  const rows = table.querySelectorAll('tbody tr');
+    let nodes = [];
+    let components = [];
+    let mode = 'select';
+    let selectedComponent = null;
+    let useCableGroup = false;
+    let usePredefinedLoad = false;
+    let dragging = false;
+    let draggingNode = null;
+    let showResults = false;
+    let nodeMap = new Map();
+    let componentMap = new Map();
+    let phaseColourMap = new Map([
+                                  [0,   ['red',  'white']],
+                                  [360, ['red',  'white']],
+                                  [-120,['white','black']],
+                                  [240, ['white','black']],
+                                  [-240,['blue', 'white']],
+                                  [120, ['blue', 'white']]
+                                ]);
+                                
+    document.getElementById('vMag').addEventListener('input', updateComponentParameters);
+    document.getElementById('vAngle').addEventListener('input', updateComponentParameters);
+    document.getElementById('resistance').addEventListener('input', updateComponentParameters);
+    document.getElementById('reactance').addEventListener('input', updateComponentParameters);
+//    document.getElementById('groupSelect').addEventListener('input', updateComponentParameters);
+//    document.getElementById('groupCableX').addEventListener('input', updateComponentParameters);
 
-  select.innerHTML = '<option value="">-- Select --</option>';
-
-  rows.forEach(row => {
-    const groupId = row.cells[0].textContent.trim();
-    if (groupId) {
-      const option = document.createElement('option');
-      option.value = groupId;
-      option.textContent = groupId;
-      select.appendChild(option);
-    }
-  });
-}
-
-function updateLoadDropdownFromTable() {
-  const table = document.getElementById('loadTable');
-  const select = document.getElementById('loadSelect');
-  const rows = table.querySelectorAll('tbody tr');
-
-  select.innerHTML = '<option value="">-- Select --</option>';
-
-  rows.forEach(row => {
-    const loadId = row.cells[0].textContent.trim();
-    if (loadId) {
-      const option = document.createElement('option');
-      option.value = loadId;
-      option.textContent = loadId;
-      select.appendChild(option);
-    }
-  });
-}
-    
 document.getElementById('groupSelect').addEventListener('change', (e) => {
   const selectedId = e.target.value;
   logger('debug', 'groupSelect value is: ', e.target.value);
@@ -82,19 +73,55 @@ document.getElementById('loadSelect').addEventListener('change', (e) => {
 });
 
 document.getElementById('groupCableCheckBox').addEventListener('change', (e) => {
-    document.getElementById('resistance').disabled = e.target.checked;
-    document.getElementById('reactance').disabled = e.target.checked;
+    document.getElementById('resistance').disabled = e.target.checked || usePredefinedLoad;
+    document.getElementById('reactance').disabled = e.target.checked || usePredefinedLoad;
     document.getElementById('groupSelect').disabled = !e.target.checked;
     useCableGroup = e.target.checked;
 });
 
 document.getElementById('loadCheckBox').addEventListener('change', (e) => {
-    document.getElementById('resistance').disabled = e.target.checked;
-    document.getElementById('reactance').disabled = e.target.checked;
-    document.getElementById('loadSelect').disabled = !e.target.checked;
-    usePredefinedLoad = e.target.checked;
+  const groupChecked = document.getElementById('groupCableCheckBox').checked;
+  document.getElementById('resistance').disabled = e.target.checked || useCableGroup;
+  document.getElementById('reactance').disabled = e.target.checked || useCableGroup;
+  document.getElementById('loadSelect').disabled = !e.target.checked;
+  usePredefinedLoad = e.target.checked;
 });
 
+  function updateGroupDropdownFromTable() {
+    const table = document.getElementById('cableTable');
+    const select = document.getElementById('groupSelect');
+    const rows = table.querySelectorAll('tbody tr');
+
+    select.innerHTML = '<option value="">-- Select --</option>';
+
+    rows.forEach(row => {
+      const groupId = row.cells[0].textContent.trim();
+      if (groupId) {
+        const option = document.createElement('option');
+        option.value = groupId;
+        option.textContent = groupId;
+        select.appendChild(option);
+      }
+    });
+  }
+
+  function updateLoadDropdownFromTable() {
+    const table = document.getElementById('loadTable');
+    const select = document.getElementById('loadSelect');
+    const rows = table.querySelectorAll('tbody tr');
+
+    select.innerHTML = '<option value="">-- Select --</option>';
+
+    rows.forEach(row => {
+      const loadId = row.cells[0].textContent.trim();
+      if (loadId) {
+        const option = document.createElement('option');
+        option.value = loadId;
+        option.textContent = loadId;
+        select.appendChild(option);
+      }
+    });
+  }
 
   function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -204,39 +231,12 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
             text(`R=${this.params.resistance.toFixed(1)}, X=${this.params.reactance.toFixed(2)}`, 0, -20); // Above base
           }
         } else if (this.type === 'connection') {
-          //~ line(-10, 0, 10, 0);
-          //~ fill(255);
-          //~ textSize(8);
-          //~ textAlign(CENTER, CENTER);
-          //~ text(`C${this.index}`, 0, -3); // Index slightly below center
-          //~ fill(0);
-          //~ textSize(8);
-          //~ textAlign(CENTER, TOP); // Align with base of triangle
+          // nothing to do here just yet.
         }
         pop();
       }
     }
 
-    let nodes = [];
-    let components = [];
-    let mode = 'select';
-    let selectedComponent = null;
-    let useCableGroup = false;
-    let usePredefinedLoad = false;
-    let dragging = false;
-    let draggingNode = null;
-    let showResults = false;
-    let nodeMap = new Map();
-    let componentMap = new Map();
-    let phaseColourMap = new Map([
-                                  [0,   ['red',  'white']],
-                                  [360, ['red',  'white']],
-                                  [-120,['white','black']],
-                                  [240, ['white','black']],
-                                  [-240,['blue', 'white']],
-                                  [120, ['blue', 'white']]
-                                ]);
- 
     // the creation of this function was only required due to 
     // multiple node's being created witht he same ID and manual
     // fixing of the json file with known large ID values that weren't 
@@ -284,13 +284,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         document.getElementById('vAngle').value = mode === 'voltage' ? document.getElementById('vAngle').value || '' : '0';
         document.getElementById('resistance').value = (mode === 'conductor' || mode === 'load') ? document.getElementById('resistance').value || '0' : '0';
         document.getElementById('reactance').value = (mode === 'conductor' || mode === 'load') ? document.getElementById('reactance').value || '0' : '0';
-        //~ if (mode === 'voltage') {
-          //~ document.getElementById('resistance').disabled = true;
-          //~ document.getElementById('reactance').disabled = true;
-        //~ } else {
-          //~ document.getElementById('resistance').disabled = false;
-          //~ document.getElementById('reactance').disabled = false;
-        //~ }
+
       }
     }
 
@@ -317,13 +311,6 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       selectedComponent.params = params;
       redraw();
     }
-
-    document.getElementById('vMag').addEventListener('input', updateComponentParameters);
-    document.getElementById('vAngle').addEventListener('input', updateComponentParameters);
-    document.getElementById('resistance').addEventListener('input', updateComponentParameters);
-    document.getElementById('reactance').addEventListener('input', updateComponentParameters);
-//    document.getElementById('groupSelect').addEventListener('input', updateComponentParameters);
-//    document.getElementById('groupCableX').addEventListener('input', updateComponentParameters);
 
     function rotateSelected() {
       if (!selectedComponent) return;
@@ -376,7 +363,10 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       
       const config = JSON.parse(localStorage.getItem('circuitConfig') || "{}");
       if (!isConfigEmpty(config)) {
-        applyConfig(config);
+        logger('info', 'Applying config:', config);
+        let data = applyConfig(config);
+        nodes = data[0];
+        components = data[1];
       }
       redraw();
       
@@ -560,7 +550,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       if (draggingNode && selectedComponent) {
         draggingNode.x = gridX;
         draggingNode.y = gridY;
-//        logger('debug', `MouseDragged: Moving N${nodeMap.get(draggingNode)} to (${gridX}, ${gridY})`);
+
         let nearbyNode = nodes.find(n => n !== draggingNode && Math.abs(n.x - gridX) < 10 && Math.abs(n.y - gridY) < 10);
         if (nearbyNode) {
           let isGround = draggingNode.isGround || nearbyNode.isGround;
@@ -568,11 +558,11 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           components.forEach(comp => {
             if (comp.startNode === draggingNode) {
               comp.startNode = nearbyNode;
-//              logger('debug', `Updated C${comp.index} start to N${nearbyNode.nodeId}`);
+
             }
             if (comp.endNode === draggingNode) {
               comp.endNode = nearbyNode;
-//              logger('debug', `Updated C${comp.index} end to N${nearbyNode.nodeId}`);
+
             }
           });
           // Transfer connections
@@ -618,7 +608,6 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           if (nearbyEnd) logger('debug', `Warning: End node at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is near N${nearbyEnd.nodeId}`);
         }
 
-//        logger('debug', `MouseDragged: Moved C${selectedComponent.index} to (${gridX}, ${gridY}), start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
         updateNodeMap();
       }
       redraw();
@@ -628,7 +617,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       dragging = false;
       draggingNode = null;
       if (selectedComponent) {
-//        logger('debug', `MouseReleased: Finalizing C${selectedComponent.index}, start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
+        logger('debug', `MouseReleased: Finalizing C${selectedComponent.index}, start N${nodeMap.get(selectedComponent.startNode)} (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}), end N${nodeMap.get(selectedComponent.endNode)} (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y})`);
       }
       redraw();
     }
@@ -640,13 +629,11 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         return;
       }
 
-      logger('debug' , `Checking if C${selectedComponent.index} has shared nodes with other components`);
       let isShared = components.some(other => 
         other !== selectedComponent && 
         ((other.startNode === selectedComponent.startNode) || (other.endNode === selectedComponent.startNode) ||
          (other.startNode === selectedComponent.endNode) || (other.endNode === selectedComponent.endNode))
       );
-      logger('debug' , `isShared: ${isShared}`);
 
       if (isShared) {
         let newStartNode = null;
@@ -655,618 +642,72 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         let compCenterX = selectedComponent.x;
         let compCenterY = selectedComponent.y;
         const offset = 30;
-        logger('debug' , `Component center: (${compCenterX}, ${compCenterY}), offset: ${offset}`);
 
         // Handle start node
-        logger('debug' , "Checking if start node is shared");
         if (components.some(other => other !== selectedComponent && (other.startNode === selectedComponent.startNode || other.endNode === selectedComponent.startNode))) {
-          logger('debug' , `Start node N${selectedComponent.startNode.nodeId} at (${selectedComponent.startNode.x}, ${selectedComponent.startNode.y}) is shared`);
           let newNodeId = getNextUnusedNodeId();
-          logger('debug' , `Assigned new nodeId: ${newNodeId} for new start node`);
           newStartNode = new Node(compCenterX + offset, compCenterY, selectedComponent.startNode.isGround, newNodeId);
-          logger('debug' , `Created newStartNode with ID ${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})`);
           nodes.push(newStartNode);
           updateNodeMap();
-          logger('debug' , `Added newStartNode to nodes, current nodes length: ${nodes.length}`);
           selectedComponent.startNode.connectedNodeList.delete(selectedComponent.endNode);
-          logger('debug' , `Removed endNode N${selectedComponent.endNode.nodeId} from startNode's connectedNodeList`);
           newStartNode.connectedNodeList.add(selectedComponent.endNode);
-          logger('debug' , `Added endNode N${selectedComponent.endNode.nodeId} to newStartNode's connectedNodeList`);
           selectedComponent.startNode = newStartNode;
-          logger('debug' , `Updated selectedComponent.startNode to N${newStartNode.nodeId}`);
         }
 
         // Handle end node
         logger('debug' , "Checking if end node is shared");
         if (components.some(other => other !== selectedComponent && (other.startNode === selectedComponent.endNode || other.endNode === selectedComponent.endNode))) {
-          logger('debug' , `End node N${selectedComponent.endNode.nodeId} at (${selectedComponent.endNode.x}, ${selectedComponent.endNode.y}) is shared`);
           let newNodeId = getNextUnusedNodeId();
-          logger('debug' , `Assigned new nodeId: ${newNodeId} for new end node`);
           newEndNode = new Node(compCenterX - offset, compCenterY, selectedComponent.endNode.isGround, newNodeId);
-          logger('debug' , `Created newEndNode with ID ${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})`);
           nodes.push(newEndNode);
           updateNodeMap();
-          logger('debug' , `Added newEndNode to nodes, current nodes length: ${nodes.length}`);
           selectedComponent.endNode.connectedNodeList.delete(selectedComponent.startNode);
-          logger('debug' , `Removed startNode N${selectedComponent.startNode.nodeId} from endNode's connectedNodeList`);
           newEndNode.connectedNodeList.add(selectedComponent.startNode);
-          logger('debug' , `Added startNode N${selectedComponent.startNode.nodeId} to newEndNode's connectedNodeList`);
           selectedComponent.endNode = newEndNode;
-          logger('debug' , `Updated selectedComponent.endNode to N${newEndNode.nodeId}`);
         }
 
         // Update draggingNode if it was one of the replaced nodes
         if (draggingNode === selectedComponent.startNode || draggingNode === selectedComponent.endNode) {
           draggingNode = (draggingNode === selectedComponent.startNode) ? newStartNode : newEndNode;
-          logger('debug' , `Updated draggingNode to N${draggingNode.nodeId}`);
         }
 
-        logger('debug' , `Disconnected C${selectedComponent.index}: ${newStartNode ? `New start N${newStartNode.nodeId} at (${newStartNode.x}, ${newStartNode.y})` : ''} ${newEndNode ? `New end N${newEndNode.nodeId} at (${newEndNode.x}, ${newEndNode.y})` : ''}, original nodes remain`);
       } else {
         logger('debug' , `C${selectedComponent.index}: No shared nodes, no disconnection needed`);
       }
 
-      logger('debug' , "Updating nodeMap");
-
-      logger('debug' , "Redrawing canvas");
       redraw();
       logger('debug' , "=== Finished disconnectSelectedNode ===");
     }
     
-    
+//##############################################################################
 
-    function updateNodeMap() {
-        logger('debug' , 'updateNodeMap called');
-      let needsRebuild = false;
-      nodes.forEach((n) => {
-        if (!nodeMap.has(n)) {
-          needsRebuild = true;
-        }
-      });
-      if (needsRebuild || nodeMap.size !== nodes.length) {
-        nodeMap.clear();
-        if (nodes === null || nodes === undefined ) {
-            logger('debug' , 'nodes is either null || undefined');
-        }
-        nodes.forEach((n) => nodeMap.set(n.nodeId, n));
-        logger('debug' , `updateNodeMap: Rebuilt nodeMap with ${nodes.length} nodes`);
-        if (nodeMap === null || nodeMap === undefined ) {
-            logger('debug' , 'nodeMap is either null || undefined');
-        }
-      } else {
-//        logger('debug' , `updateNodeMap: No changes needed, nodeMap unchanged`);
-      }
-    }
-    
-    /*
-     * Before calling calculateCircuit() save the config to localStorage.
-     */
-    function calculateCircuitPrep(){
-      
-        let config = getConfig();
-        localStorage.setItem('circuitConfig', JSON.stringify(config));
-        
-        calculateCircuit();
-    }
 /*
- * 
- * 
- * 
- * 
+ * Load and Save functions.
  */
-    function calculateCircuit() {
-      nodes.forEach(n => {
-        n.voltage = null;
-        n.nodeId = n.nodeId; // Preserve nodeId, but don’t reset
-      });
-      components.forEach(c => c.current = null);
 
-      // Identify grounds and set their voltages to complex zero (0)
-      let groundNodes = nodes.filter(n => n.isGround);
-      groundNodes.forEach(n => n.voltage = complex(0, 0));
-      
-      // Identify the non ground nodes
-      let nonGroundNodes = nodes.filter(n => !n.isGround);
+async function saveConfig() {
+  const blob = saveConfigToBlob(nodes, components);
 
-      // Collect voltage sources
-      let voltageSources = components.filter(c => c.type === 'voltage');
-      if (voltageSources.length === 0) {
-        logger('debug' , 'No voltage source found, skipping calculation');
-        showResults = false;
-        redraw();
-        return;
-      }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'circuit_config.json';
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
-      // Map the non ground nodes into the Map
-      nonGroundNodeMap = new Map();
-      nonGroundNodes.forEach((n, i) => nonGroundNodeMap.set(n, i));
+async function loadConfig(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
-      let totalVars = nonGroundNodeMap.size + voltageSources.length; // 18 nodes + 3 voltage currents
-      let Y = Array(totalVars).fill().map(() => Array(totalVars).fill(complex(0, 0)));
-      let I = Array(totalVars).fill(complex(0, 0));
-
-      log('info', `Initialized Y matrix size: ${totalVars} x ${totalVars}`);
-      log('info', `Initialized I vector size: ${totalVars}`);
-
-      console.log('Building the Y matrix');
-      logger('debug', `Components size: ${components.length}`);
-      components.forEach(c => {
-
-        let i = nonGroundNodeMap.get(c.startNode);
-        let j = nonGroundNodeMap.get(c.endNode);
-        let vs = polarToComplex(c.params.voltage, c.params.angle);
-
-
-          let resistance = c.params.resistance;
-          let reactance = c.params.reactance || 0;
-          if (resistance === 0 && reactance === 0 && c.type !== 'voltage' && c.type !== 'connection') {
-              logger('debug', `setting small resistance = 1e-6 for Component C${c.index} (Type: ${c.type})`);
-            resistance = 1e-6; // Only for conductor/load, not connection 
-          }
-          let impedance = complex(resistance, reactance);
-          let admittance = cdiv(complex(1, 0), impedance);
-          if (c.type === 'connection') {
-            // Ideal short: enforce V[i] = V[j] by adding large admittance
-            admittance = complex(1e12, 0); // High conductance to force equal voltages
-            resistance = 1e-12;
-            logger('debug', `Connection C${c.index}: Treating as ideal short with Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
-          } else {
-            logger('debug', `Component C${c.index} (Type: ${c.type}) Y[${i}][${j}]`);
-            logger('debug', `Component C${c.index} (Type: ${c.type}): Z = ${resistance}+j${reactance} Ω, Y = ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} S`);
-          }
-          
-//          matlabCompLines.push(`    struct('id', ${c.index}, 'voltage', ${vs.re} + (${vs.im}) * 1j, 'resistance', ${resistance}, 'reactance', ${reactance}, 'nodes', [${i}, ${j}]), ...`);
-
-        if (i !== undefined) {
-          Y[i][i] = cadd(Y[i][i], admittance);
-          logger('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${i}]`);
-        }
-        if (j !== undefined) {
-          Y[j][j] = cadd(Y[j][j], admittance);
-          logger('debug', `adding admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${j}]`);
-        }
-          
-        if (i !== undefined && j !== undefined) {
-          Y[i][j] = csub(Y[i][j], admittance);
-          logger('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${i}][${j}]`);
-          Y[j][i] = csub(Y[j][i], admittance);
-          logger('debug', `subtracting admittance ${admittance.re.toFixed(1)}+j${admittance.im.toFixed(1)} to Y[${j}][${i}]`);
-          
-          logger('debug', `Current Y[${i}][${j}] = ${Y[i][j].re.toFixed(1)}+j${Y[i][j].im.toFixed(1)} S`);
-        }
-      });
-      
-      // Apply voltage source constraint
-      voltageSources.forEach((vs, idx) => {
-          logger('debug', `Voltage ${idx}`);
-        let vsIdx = nonGroundNodeMap.size + idx; // Start after node indices
-        let startIdx = nonGroundNodeMap.get(vs.startNode);
-        let endIdx = nonGroundNodeMap.get(vs.endNode);
-        let complexOne = complex(1, 0);
-        let complexNegOne = complex(-1, 0);
-        if (startIdx !== undefined) {
-          Y[startIdx][vsIdx] = complexOne;
-          Y[vsIdx][startIdx] = complexOne;
-          logger('debug', `Applying voltage source C${vs.index}: Y[${startIdx}][${vsIdx}] = 1+j0, Y[${vsIdx}][${startIdx}] = 1+j0`);
-        }
-        if (endIdx !== undefined) {
-          logger('debug', `Applying voltage source C${vs.index}: Y[${endIdx}][${vsIdx}] = -1+j0, Y[${vsIdx}][${endIdx}] = -1+j0`);
-          Y[endIdx][vsIdx] = complexNegOne;
-          Y[vsIdx][endIdx] = complexNegOne;
-        }
-        I[vsIdx] = polarToComplex(vs.params.voltage, vs.params.angle);
-      });
-
-      logger('debug', 'Final Y matrix:', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
-      for (let i = 0; i < totalVars; i++) {
-        let rowSum = complex(0, 0);
-        for (let j = 0; j < totalVars; j++) rowSum = cadd(rowSum, Y[i][j]);
-      }
-      logger('debug', 'Final I vector:', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
-
-//    printCircuitMatrix(Y, I);
-      
-      
-      let V = solveLinearSystem(Y, I);
-      if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
-        console.error('Solve failed, Y matrix may be singular. Initial V:', V);
-        V = Array(totalVars).fill(complex(0, 0));
-      }
-
-      if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
-        console.error('Invalid V vector detected');
-        showResults = false;
-        redraw();
-        return;
-      }
-      logger('info', 'Raw V vector:', V.map(v => `${v.re.toFixed(6)}+j${v.im.toFixed(6)}`));
-        
-      let testResults = ['\n'];
-      
-      nodes.forEach(n => {
-        let idx = nonGroundNodeMap.get(n);
-        if (idx !== undefined) {
-          n.voltage = V[idx] || complex(0, 0);
-          let [mag, angle] = complexToPolar(n.voltage);
-          testResults.push(`N${n.nodeId} ${n.voltage.re.toFixed(12)} + j${n.voltage.im.toFixed(12)}`);
-        } else {
-          n.voltage = complex(0, 0);
-          testResults.push(`N${n.nodeId} ${n.voltage.re.toFixed(12)} + j${n.voltage.im.toFixed(12)}`);
-        }
-      });
-      
-      voltageSources.forEach((c, idx) => {
-        let k = nonGroundNodeMap.size + idx;
-        let startIdx = nonGroundNodeMap.get(c.startNode);
-        let endIdx = nonGroundNodeMap.get(c.endNode);
-        c.current = V[k];
-        let [mag, angle] = complexToPolar(c.current);
-        logger('debug', `Voltage source C${c.index} current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
-        testResults.push(`C${c.index} ${c.current.re.toFixed(12)} + j${c.current.im.toFixed(12)}`);
-      });
-
-      testResultsString = testResults.join('\n')
-      logger('test', testResultsString);
-            
-      components.forEach(c => {
-          let i = nonGroundNodeMap.get(c.startNode);
-          let j = nonGroundNodeMap.get(c.endNode);
-          let startVoltage = 0;
-          let endVoltage = 0;
-        if ((c.type === 'conductor' || c.type === 'load' || c.type === 'connection')) {
-
-          let resistance = c.params.resistance;
-          let reactance = c.params.reactance || 0;
-          if (resistance === 0 && reactance === 0) {
-            resistance = 1e-9; // Only for conductor/load, not connection
-          }
-          let Z = complex(resistance, reactance);
-            
-          if (i !== undefined && j !== undefined) {
-
-            let V_diff = getPositiveVoltageDrop(V[i], V[j]);
-            logger('debug', `Component C${c.index} (${c.type}): Nodes ${i} to ${j}, V[${i}] = ${V[i].re.toFixed(1)}+j${V[i].im.toFixed(1)} V, V[${j}] = ${V[j].re.toFixed(1)}+j${V[j].im.toFixed(1)} V, V_diff = ${V_diff.re.toFixed(3)}+j${V_diff.im.toFixed(3)} V, Z = ${resistance.toFixed(3)}+j${reactance.toFixed(3)} Ω`);
-            c.current = cdiv(V_diff, Z);
-            let [mag, angle] = complexToPolar(c.current);
-            logger('debug', `Component C${c.index} (${c.type}) current = ${mag.toFixed(1)}∠${angle.toFixed(1)}° A`);
-            
-          } else {
-              
-              startVoltage = (i !== undefined) ? V[i] : complex(0,0);
-              endVoltage = (j !== undefined) ? V[j] : complex(0,0);
-              logger('debug', `Component C${c.index} startVoltage ${startVoltage.re.toFixed(6)}+j${startVoltage.im.toFixed(6)}V, endVoltage ${endVoltage.re.toFixed(6)}+j${endVoltage.im.toFixed(6)}V`);
-
-              let V_diff = getPositiveVoltageDrop(startVoltage, endVoltage);
-              c.current = cdiv(V_diff, Z);
-              let [mag, angle] = complexToPolar(c.current);
-              logger('debug', `Component C${c.index} (${c.type}): Nodes ${c.startNode.nodeId} to ${c.endNode.nodeId}, V[${i}] = ${startVoltage.re.toFixed(6)}+j${startVoltage.im.toFixed(6)} V, V[${j}] = ${endVoltage.re.toFixed(6)}+j${endVoltage.im.toFixed(6)} V, V_diff = ${V_diff.re.toFixed(6)}+j${V_diff.im.toFixed(6)} V, Z = ${resistance.toFixed(6)}+j${reactance.toFixed(6)} Ω`);
-              logger('debug', `Component C${c.index} (${c.type}) current = ${mag.toFixed(3)}∠${angle.toFixed(3)}° A`);
-          }
-        }
-      });
-
-      showResults = true;
-      redraw();
-    }
-
-
-//##############################################################################
-
-    function showSignedZero(n) {
-      if (Object.is(n, -0)) return "-0.000000";
-      return n.toFixed(6);
-    }
-
-    function complexMagnitude(complex) {
-      return Math.sqrt(complex.re * complex.re + complex.im * complex.im);
-    }
-    function getPositiveVoltageDrop(v1, v2) {
-      let mag1 = complexMagnitude(v1);
-      let mag2 = complexMagnitude(v2);
-      let diff = { re: 0, im: 0 };
-      if (mag1 >= mag2) {
-        diff = csub(v1, v2); // v1 - v2 (higher - lower)
-      } else {
-        diff = csub(v2, v1); // v2 - v1 (higher - lower)
-      }
-      return diff;
-    }
-    function complex(re, im) { return { re, im }; }
-    function cadd(a, b) { return { re: a.re + b.re, im: a.im + b.im }; }
-    function csub(a, b) { return { re: a.re - b.re, im: a.im - b.im }; }
-    function cmul(a, b) { return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re }; }
-    function cdiv(a, b) {
-      let denom = b.re * b.re + b.im * b.im;
-      if (denom === 0) return complex(0, 0);
-      return { re: (a.re * b.re + a.im * b.im) / denom, im: (a.im * b.re - a.re * b.im) / denom };
-    }
-    function polarToComplex(mag, angleDeg) {
-      let angleRad = angleDeg * Math.PI / 180;
-      return { re: mag * Math.cos(angleRad), im: mag * Math.sin(angleRad) };
-    }
-
-    // Assuming complexToPolar exists and returns [magnitude, angle]
-    function complexToPolar(complex) {
-      let mag = Math.sqrt(complex.re * complex.re + complex.im * complex.im);
-      let angle = Math.atan2(complex.im, complex.re) * 180 / Math.PI; // In degrees
-
-//      angle = ((angle % 360) + 360) % 360;
-      // Normalize to [180, -180)
-      angle = angle % 360;
-      angle = (angle > 180) ? angle -360 : angle;
-      return [mag, angle];
-    }
-
-//##############################################################################
-
-    function solveLinearSystem(A, b) {
-      let n = A.length;
-      let augmented = A.map((row, i) => [...row.slice(0, n), b[i] ? b[i] : complex(0, 0)]);
-      for (let i = 0; i < n; i++) {
-        let maxPivot = Math.abs(augmented[i][i].re) + Math.abs(augmented[i][i].im);
-        let maxRow = i;
-        for (let k = i + 1; k < n; k++) {
-          let pivot = Math.abs(augmented[k][i].re) + Math.abs(augmented[k][i].im);
-          if (pivot > maxPivot) { maxPivot = pivot; maxRow = k; }
-        }
-        if (maxRow !== i) {
-          [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
-        }
-        let pivot = augmented[i][i];
-        for (let j = i; j <= n; j++) {
-          augmented[i][j] = augmented[i][j] ? cdiv(augmented[i][j], pivot) : complex(0, 0);
-        }
-        for (let k = 0; k < n; k++) {
-          if (k !== i) {
-            let factor = augmented[k][i];
-            for (let j = i; j <= n; j++) {
-              augmented[k][j] = augmented[k][j] ? csub(augmented[k][j], cmul(factor, augmented[i][j])) : complex(0, 0);
-            }
-          }
-        }
-      }
-      return augmented.map(row => row[n] || complex(0, 0));
-    }
-
-//##############################################################################
-
-    function getConfig(){
-        let config = {
-        nodes: nodes.map(n => ({ x: n.x, y: n.y, isGround: n.isGround, nodeId: n.nodeId !== null ? n.nodeId : nodes.indexOf(n) })),
-        components: components.map(c => ({
-          componentId: c.index,
-          x: c.x,
-          y: c.y,
-          type: c.type,
-          params: c.params,
-          rotation: c.rotation,
-          startNode: { nodeId: c.startNode.nodeId !== null ? c.startNode.nodeId : nodes.indexOf(c.startNode) },
-          endNode: { nodeId: c.endNode.nodeId !== null ? c.endNode.nodeId : nodes.indexOf(c.endNode) }
-        }))
-      };
-      
-      return config;
-    }
-
-
-    async function saveConfig() {
-      let config = getConfig();
-      logger('debug', 'Nodes before download:', nodes.map((n, i) => `N${i}: isGround=${n.isGround}, x=${n.x}, y=${n.y}, nodeId=${n.nodeId}`));
-      let data = JSON.stringify(config, null, 2);
-      try {
-        const blob = new Blob([data], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'circuit_config.json';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        logger('debug', 'Download initiated, check for circuit_config.json');
-        if (window.showSaveFilePicker) {
-          const handle = await showSaveFilePicker({
-            suggestedName: 'circuit_config.json',
-            types: [{
-              description: 'JSON Files',
-              accept: { 'application/json': ['.json'] }
-            }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(data);
-          await writable.close();
-          logger('debug', 'File also saved via dialog (optional)');
-        }
-      } catch (error) {
-        console.error('Download failed:', error);
-        alert('Download failed. Check console for details or try again.');
-      }
-    }
-
-
-
-    function loadConfig(event) {
-      let file = event.target.files[0];
-      if (!file) return;
-      
-      let reader = new FileReader();
-      reader.onload = function(e) {
-       
-        try {
-          const config = JSON.parse(e.target.result);
-          applyConfig(config);
-        } catch (err) {
-          console.error('Error parsing config:', err);
-          alert('Invalid JSON config:\n' + err.message);
-        }
-          
-      };
-      reader.readAsText(file);
-    }
-
-
-    function applyConfig(config){
-        
-      nodes = config.nodes.map((n, index) => {
-        if (n.nodeId === undefined) {
-          console.error(`Node ID undefined: ${index}`);
-          return null;
-        }
-        let nodeId = n.nodeId ;
-        let node = new Node(n.x, n.y, n.isGround, nodeId);
-        nodeMap.set(node, index);
-        return node;
-      });
-      components = config.components.map(c => {
-        let startNodeId = c.startNode.nodeId;
-        let endNodeId = c.endNode.nodeId;
-        let startNode = null;
-        let endNode = null;
-        nodes.forEach((n, i) => {
-          if (startNodeId === n.nodeId){
-              startNode = n;
-          }
-          if (endNodeId === n.nodeId){
-              endNode = n;
-          }
-        });
-        
-        if (!startNode || !endNode) {
-          console.error(`Node ID mismatch: componentId=${c.componentId}, startNodeId=${startNodeId}, endNodeId=${endNodeId}`);
-          return null; // Skip invalid components
-        }
-        
-        let newComponent = new Component(c.x, c.y, c.type, c.params, startNode, endNode);
-        newComponent.rotation = c.rotation;
-        // Populate connectedNodeList for both nodes
-        startNode.addConnectedNode(endNode);
-        endNode.addConnectedNode(startNode);
-        return newComponent;
-      }).filter(c => c !== null); // Remove invalid components
-//      nodeMap.clear();
-      componentMap.clear();
-
-      components.forEach((c, i) => {
-        c.index = i;
-        componentMap.set(c.index, c);
-      });
-      logger('debug', 'Loaded nodes:', nodes.map(n => `nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
-      document.getElementById('configFile').value = '';
-      redraw();
-        
-    }
-    
-    
-//==============================================================================
-//
-// Test MNA matrix
-//
-//==============================================================================
-
-    function printCircuitMatrix(Y, I) {
-      const totalVars = Y.length;
-      const nodeCount = totalVars - 1; // Subtract 1 for the voltage source current
-      const yRows = Y.map((row, i) => {
-        let rowLabel = i < nodeCount ? `N${i}` : `I_C${i - nodeCount}`;
-        let rowStr = row.map(c => `complex(${c.re.toFixed(1)}, ${c.im.toFixed(1)})`).join(", ");
-        return `  [${rowStr}],      // ${rowLabel}`;
-      }).join("\n");
-      const iRows = I.map((val, i) => {
-        let label = i < nodeCount ? `N${i}` : `I_C${i - nodeCount} (${I[i].re.toFixed(1)} V source)`;
-        return `  complex(${val.re.toFixed(1)}, ${val.im.toFixed(1)}),  // ${label}`;
-      }).join("\n");
-      logger('debug', 
-        `// Manually construct Y matrix (${totalVars}x${totalVars} for ${nodeCount} nodes + 1 voltage source current)\n` +
-        `let Y = [\n` +
-        `${yRows}\n` +
-        `];\n\n` +
-        `// Manually construct I vector\n` +
-        `let I = [\n` +
-        `${iRows}\n` +
-        `];`
-      );
-    }
-
-    
-    function testMNA() {
-      logger('debug', "Running MNA Test...");
-
-      
-      
-// Manually construct Y matrix (28x28 for 27 nodes + 1 voltage source current)
-let Y = [
-  [complex(2001.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N0
-  [complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)],      // N1
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0)],      // N2
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1001000.0, 0.0), complex(-1000.0, 0.0), complex(-1000000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N3
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(3000.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N4
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000000.0, 0.0), complex(0.0, 0.0), complex(1001000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N5
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N6
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(2000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N7
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(3000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N8
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N9
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N10
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N11
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(2000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N12
-  [complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(3000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N13
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N14
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N15
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N16
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(2000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N17
-  [complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(3000.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N18
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-0.1, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000.1, 0.0), complex(-1000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N19
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000.0, 0.0), complex(-1000.0, 0.0), complex(2000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N20
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0), complex(0.0, 0.0)],      // N21
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0)],      // N22
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1000000.0, 0.0), complex(-1000000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N23
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1000000.0, 0.0), complex(1000000.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N24
-  [complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N25
-  [complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // N26
-  [complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(-1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0)],      // I_C0
-];
-
-// Manually construct I vector
-let I = [
-  complex(0.0, 0.0),  // N0
-  complex(0.0, 0.0),  // N1
-  complex(0.0, 0.0),  // N2
-  complex(0.0, 0.0),  // N3
-  complex(0.0, 0.0),  // N4
-  complex(0.0, 0.0),  // N5
-  complex(0.0, 0.0),  // N6
-  complex(0.0, 0.0),  // N7
-  complex(0.0, 0.0),  // N8
-  complex(0.0, 0.0),  // N9
-  complex(0.0, 0.0),  // N10
-  complex(0.0, 0.0),  // N11
-  complex(0.0, 0.0),  // N12
-  complex(0.0, 0.0),  // N13
-  complex(0.0, 0.0),  // N14
-  complex(0.0, 0.0),  // N15
-  complex(0.0, 0.0),  // N16
-  complex(0.0, 0.0),  // N17
-  complex(0.0, 0.0),  // N18
-  complex(0.0, 0.0),  // N19
-  complex(0.0, 0.0),  // N20
-  complex(0.0, 0.0),  // N21
-  complex(0.0, 0.0),  // N22
-  complex(0.0, 0.0),  // N23
-  complex(0.0, 0.0),  // N24
-  complex(230.0, 0.0),  // N25
-  complex(-115.0, 199.2),  // N26
-  complex(-115.0, 199.2),  // I_C0 (-115.0 V source)
-];
-
-      logger('debug', "Test Y matrix:");
-      logger('debug', Y.map(row => row.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`).join(', ')));
-      logger('debug', "Test I vector:");
-      logger('debug', I.map(c => `${c.re.toFixed(1)}+j${c.im.toFixed(1)}`));
-
-      // Solve the system
-      let V = solveLinearSystem(Y, I);
-      if (!V || V.some(v => v === undefined || isNaN(v.re) || isNaN(v.im))) {
-        console.error("Solve failed, Y matrix may be singular or ill-conditioned. Initial V:", V);
-      } else {
-        logger('debug', "Solved V vector:");
-        logger('debug', V.map(v => `${v.re.toFixed(1)}+j${v.im.toFixed(1)}`));
-
-      }
-    }   
+  const text = await file.text();
+  try {
+    const data = loadConfigFromText(text);
+    nodes = data[0];
+    components = data[1];
+    redraw();
+  } catch (err) {
+    console.error('Invalid config:', err);
+    alert('Failed to load config: ' + err.message);
+  }
+}

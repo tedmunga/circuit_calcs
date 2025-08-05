@@ -35,6 +35,7 @@ const CableTab = {
       const insulation = data?.insulation || insulations[0];
 
       row.innerHTML = `
+        <td><input type="checkbox" class="row-select"></td>
         <td>${groupId}</td>
         <td><input type="text" class="description" value="${description}"></td>
         <td><input type="number" class="length" value="${length}"></td>
@@ -67,6 +68,19 @@ const CableTab = {
       });
     },
 
+    deleteCableRows(){
+      const tbody = document.querySelector('#cableTable tbody');
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+        const checkbox = row.querySelector('.row-select');
+        if (checkbox?.checked) {
+          row.remove();
+        }
+      });
+      CableTab.updateRow(row);
+      
+    },
 
     getJsonData() {
       const rows = [...document.querySelectorAll('#cableTable tbody tr')];

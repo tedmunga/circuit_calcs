@@ -6,6 +6,12 @@ body {
   width: 80px;
 }
 
+.resistance_input, .reactance_input{
+width: 20px;
+}
+.id, .check{
+width: 40px;
+}
 .groupCheckBox, .loadCheckBox {
   width: 10px;
   align-items: center;
@@ -93,7 +99,6 @@ html, body {
 
 #controls { position: absolute; top: 10px; left: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; }
 button { margin: 5px; padding: 5px 10px; }
-input { margin: 5px; width: 80px; }
 canvas { display: block; }
 #configFile { display: none; }
 canvas { font-family: Arial, sans-serif; font-weight: normal; }
@@ -102,13 +107,38 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
-th, td {
+
+th {
   border: 1px solid #ccc;
 /*  padding: 6px; */
   text-align: center;
 }
-select, input {
+td select {
   width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ccc;
+  font: inherit;
+}
+/*
+input {
+  width: 100%;
+}
+*/
+.length_input {
+  width: 80px;
+}
+.length {
+  width: 100%;
+  margin: 0;
+}
+
+
+.description {
+  width: 100%;
+  margin: 10px 0;
+  padding: 0px 4px;
 }
 .controls {
   margin: 10px 0;
@@ -222,7 +252,7 @@ select, input {
 #loadTable input {
     border: 1px solid #f1f1f1;
     font-size: 12px;
-    /* width: 75px; */
+     width: 75px; 
     box-sizing: border-box;
 }
 */
@@ -248,14 +278,14 @@ select, input {
 
 #cableTable input:not([disabled]):not([class="optional"])[type="number"],
 #loadTable input:not([disabled]):not([class="optional"])[type="number"] {
-    /* width: 75px; */
     background-color : #FFFFCC;
     border-color: #f1f1f1;
     border-width: thin; 
 }
-
-.description {
-    padding: 0px 4px;
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 #cableCalcsMainTable th {
