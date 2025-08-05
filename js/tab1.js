@@ -33,9 +33,9 @@ document.getElementById('groupSelect').addEventListener('change', (e) => {
 
   let found = false;
   rows.forEach(row => {
-    if (row.cells[0].textContent.trim() === selectedId) {
-      document.getElementById('groupCableR').value = row.cells[10].textContent.trim();
-      document.getElementById('groupCableX').value = row.cells[11].textContent.trim();
+    if (row.cells[1].textContent.trim() === selectedId) {
+      document.getElementById('groupCableR').value = row.querySelector('.total-r').textContent.trim();
+      document.getElementById('groupCableX').value = row.querySelector('.total-x').textContent.trim();
       logger('debug', 'found value is: ', selectedId);
       found = true;
     }
@@ -56,9 +56,9 @@ document.getElementById('loadSelect').addEventListener('change', (e) => {
 
   let found = false;
   rows.forEach(row => {
-    if (row.cells[0].textContent.trim() === selectedId) {
-      document.getElementById('loadR').value = row.cells[2].querySelector('input.resistance').value;
-      document.getElementById('loadX').value = row.cells[3].querySelector('input.reactance').value;
+    if (row.cells[1].textContent.trim() === selectedId) {
+      document.getElementById('loadR').value = row.querySelector('.resistance').value;
+      document.getElementById('loadX').value = row.querySelector('.reactance').value;
       logger('debug', 'load id found value is: ', selectedId);
       found = true;
     }
@@ -95,7 +95,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     select.innerHTML = '<option value="">-- Select --</option>';
 
     rows.forEach(row => {
-      const groupId = row.cells[0].textContent.trim();
+      const groupId = row.cells[1].textContent.trim();
       if (groupId) {
         const option = document.createElement('option');
         option.value = groupId;
@@ -113,7 +113,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     select.innerHTML = '<option value="">-- Select --</option>';
 
     rows.forEach(row => {
-      const loadId = row.cells[0].textContent.trim();
+      const loadId = row.cells[1].textContent.trim();
       if (loadId) {
         const option = document.createElement('option');
         option.value = loadId;
@@ -213,6 +213,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           if (this.params.resistance !== 0 || this.params.reactance !== 0) {
             text(`R=${this.params.resistance.toFixed(3)}, X=${this.params.reactance.toFixed(3)}`, 0, -12);
           }
+          if (this.params.group !== undefined && this.params.group !== 0){
+            text(`G=${this.params.group}`, 0, -22);
+          }
         } else if (this.type === 'load') {
           let tri_size = 12;
           stroke(0);
@@ -229,6 +232,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           textAlign(CENTER, TOP);
           if (this.params.resistance !== 0 || this.params.reactance !== 0) {
             text(`R=${this.params.resistance.toFixed(1)}, X=${this.params.reactance.toFixed(2)}`, 0, -20); // Above base
+          }
+          if (this.params.group !== undefined && this.params.group !== 0){
+            text(`L=${this.params.group}`, 0, -32);
           }
         } else if (this.type === 'connection') {
           // nothing to do here just yet.
@@ -303,6 +309,17 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
             ? parseInt(document.getElementById('groupSelect').value) || 0 
             : 0
       };
+      if (selectedComponent.type === 'load') {
+        params.resistance = usePredefinedLoad
+            ? parseFloat(document.getElementById('loadR').value) || 0 
+            : parseFloat(document.getElementById('resistance').value) || 0;
+        params.reactance = usePredefinedLoad
+            ? parseFloat(document.getElementById('loadX').value) || 0 
+            : parseFloat(document.getElementById('reactance').value) || 0;
+        params.group = usePredefinedLoad
+            ? parseInt(document.getElementById('loadSelect').value) || 0 
+            : 0
+      }
       if (selectedComponent.type === 'voltage') {
         params.resistance = 0;
         params.reactance = 0;

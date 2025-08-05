@@ -4,6 +4,7 @@ const CableTab = {
     init(){
         
         const data = JSON.parse(localStorage.getItem('cableConfig') || "[]");
+        logger('info', 'Adding Cable data:', data);
         data.forEach(d => CableTab.addCableRow(d));
     },
 

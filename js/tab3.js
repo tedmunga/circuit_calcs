@@ -44,6 +44,7 @@ const LoadTab = {
         });
         
         const data = JSON.parse(localStorage.getItem('loadConfig') || "[]");
+        logger('info', 'Adding Load data:', data);
         data.forEach(d => LoadTab.addLoadRow(d));
     },
 
@@ -61,8 +62,8 @@ const LoadTab = {
         <td class="l_check_td"><input type="checkbox" class="row-select"></td>
         <td class="l_id_td">${loadId}</td>
         <td><input type="text" class="description" value="${description}"></td>
-        <td><input type="number" class="resistance" value="${R}"></td>
-        <td><input type="number" class="reactance" value="${X}"></td>
+        <td><input type="number" id="load_R" class="resistance" value="${R}"></td>
+        <td><input type="number" id="load_X" class="reactance" value="${X}"></td>
       `;
 
       tbody.appendChild(row);
