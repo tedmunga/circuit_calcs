@@ -42,7 +42,7 @@
               <button onclick="rotateSelected()">Rotate Selected</button>
               <button onclick="disconnectSelectedNode()">Disconnect Selected</button>
               <button onclick="deleteSelected()">Delete Selected</button>
-              <button onclick="calculateCircuit()">Calculate</button>
+              <button onclick="calculateCircuitPrep()">Calculate</button>
               <button onclick="toggleResults()">Toggle Results</button>
               <button onclick="getNextUnusedNodeId()">Next Node #</button>
               <button onclick="getNextUnusedComponentId()">Next Component #</button>
@@ -109,10 +109,10 @@
               <th>Size</th>
               <th>Type</th>
               <th>Temp</th>
-              <th>R(Ω)</th>
               <th>Formation Type</th>
               <th>Insulation</th>
-              <th>X(Ω)</th>
+              <th>R(Ω/km)</th>
+              <th>X(Ω/km)</th>
               <th>Total R(Ω)</th>
               <th>Total X(Ω)</th>
             </tr>
@@ -158,6 +158,7 @@
     <script src="js/tab3.js"></script>
     
   <script>
+    CableTab.init();
     LoadTab.init();
   </script>
 </body>

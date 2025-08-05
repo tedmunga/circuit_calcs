@@ -30,8 +30,12 @@ const LoadTab = {
               }
                 
               if (P > 0 && pf > 0 && V > 0) {
-                const R = (V ** 2 * pf) / P;
-                const X = (V ** 2 * Math.sqrt(1 - pf ** 2)) / P;
+                const I = P / (V * pf);
+                const Z = V / I;               // or (V ** 2 * pf) / P
+                const theta = Math.acos(pf);
+
+                const R = Z * pf;              // or (V**2 * pf**2) / P
+                const X = Z * Math.sin(theta); // or (V**2 * pf / P) * Math.sqrt(1 - pf**2)
                 console.log(`R = ${R.toFixed(2)} Ω, X = ${X.toFixed(2)} Ω`);
                 this.resistanceInput.value = R.toFixed(2);
                 this.reactanceInput.value =  X.toFixed(2);
@@ -40,12 +44,17 @@ const LoadTab = {
               }
             });
         });
+        
+        const data = JSON.parse(localStorage.getItem('loadConfig') || "[]");
+        data.forEach(d => LoadTab.addLoadRow(d));
     },
+
 
     addLoadRow(data = null) {
       const tbody = document.querySelector('#loadTable tbody');
       const row = document.createElement('tr');
 
+      logger('info', "loadCounter: ", this.loadCounter);
       const loadId = data?.loadId ?? this.loadCounter++;
       const description = data?.description || "";
       const R = data?.R || 0;
@@ -66,7 +75,8 @@ const LoadTab = {
         el.addEventListener('change', () => LoadTab.updateRow(row));
       });
     },
-    
+
+
     addLoadToTable(){
         const data = {
             R: this.resistanceInput.value,
@@ -75,35 +85,33 @@ const LoadTab = {
         LoadTab.addLoadRow(data);
     },
 
-    updateRow(row) {
-        
-      //~ const length = parseFloat(row.querySelector('.length').value) || 0;
-      //~ const size = row.querySelector('.size').value;
-      //~ const type = row.querySelector('.type').value;
-      //~ const temp = row.querySelector('.temp').value;
-      //~ const form = row.querySelector('.form').value;
-      //~ const insulation = row.querySelector('.insulation').value;
 
-      //~ const R = table_34[size]?.[type]?.[temp] ?? 0;
-      //~ const X = table_30[size]?.[form]?.[insulation] ?? 0;
-
-      //~ row.querySelector('.r').textContent = R;
-      //~ row.querySelector('.x').textContent = X;
-
-      updateLoadDropdownFromTable();
-    },
-
-    saveConfig() {
+    getJsonData() {
       const rows = [...document.querySelectorAll('#loadTable tbody tr')];
       const data = rows.map(row => ({
-        loadId: row.cells[0].textContent,
+//        loadId: row.cells[0].textContent,
         description: row.querySelector('.description').value,
         R: row.querySelector('.resistance').value,
         X: row.querySelector('.reactance').value,
-
       }));
       
-      logger('debug', "save data", data);
+      return data;
+    },
+
+    updateRow(row) {
+
+      const data = LoadTab.getJsonData();
+      localStorage.setItem('loadConfig', JSON.stringify(data));
+      
+      updateLoadDropdownFromTable();
+    },
+
+
+    saveConfig() {
+      const rows = [...document.querySelectorAll('#loadTable tbody tr')];
+      const data = LoadTab.getJsonData();
+      
+      logger('debug', "Save Load data", data);
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -111,6 +119,7 @@ const LoadTab = {
       a.download = 'load_config.json';
       a.click();
     },
+
 
     loadConfig(event) {
       const file = event.target.files[0];

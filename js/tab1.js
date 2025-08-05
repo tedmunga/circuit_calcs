@@ -88,6 +88,13 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
     useCableGroup = e.target.checked;
 });
 
+document.getElementById('loadCheckBox').addEventListener('change', (e) => {
+    document.getElementById('resistance').disabled = e.target.checked;
+    document.getElementById('reactance').disabled = e.target.checked;
+    document.getElementById('loadSelect').disabled = !e.target.checked;
+    usePredefinedLoad = e.target.checked;
+});
+
 
   function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -215,6 +222,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
     let mode = 'select';
     let selectedComponent = null;
     let useCableGroup = false;
+    let usePredefinedLoad = false;
     let dragging = false;
     let draggingNode = null;
     let showResults = false;
@@ -228,7 +236,7 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
                                   [-240,['blue', 'white']],
                                   [120, ['blue', 'white']]
                                 ]);
-    
+ 
     // the creation of this function was only required due to 
     // multiple node's being created witht he same ID and manual
     // fixing of the json file with known large ID values that weren't 
@@ -247,6 +255,12 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
     }
     
 //==============================================================================
+
+    function isConfigEmpty(cfg) {
+      return !(Array.isArray(cfg.nodes) && cfg.nodes.length > 0) &&
+             !(Array.isArray(cfg.components) && cfg.components.length > 0);
+    }
+
 
     function getNextUnusedComponentId() {
       let usedIds = new Set();
@@ -359,6 +373,11 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
       textAlign(CENTER, CENTER);
       textFont('Courier New');
       //textFont('Arial'); // Set default font
+      
+      const config = JSON.parse(localStorage.getItem('circuitConfig') || "{}");
+      if (!isConfigEmpty(config)) {
+        applyConfig(config);
+      }
       redraw();
       
     }
@@ -416,7 +435,6 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
       if (event.target.tagName === 'BUTTON' || 
           event.target.tagName === 'INPUT'  ||
           event.target.tagName === 'SELECT'){
-          logger('debug', 'MousePressed: 368 returning', event.target.tagName);
           return;
     }
       let clickedNodeComponent = components.find(c =>
@@ -445,7 +463,6 @@ document.getElementById('groupCableCheckBox').addEventListener('change', (e) => 
         let centerY = c.y;
         return Math.abs(centerX - mouseX) < 20 && Math.abs(centerY - mouseY) < 20;
       });
-logger('debug', 'MousePressed: 397 ', event.target.tagName);
 
       if (selectedComponent && mode === 'select') {
         dragging = true;
@@ -478,7 +495,7 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
           newComponent.endNode.isGround = true;
           components.push(newComponent);
-        } else if (mode === 'conductor' || mode === 'load') {
+        } else if (mode === 'conductor') {
             
           let params = {
             voltage: 0,
@@ -493,9 +510,29 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
                 ? parseInt(document.getElementById('groupSelect').value) || 0 
                 : 0
           };
+          
           logger('debug', `Creating ${mode} component with params:`, params);
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
           components.push(newComponent);
+        } else if (mode === 'load') {
+            
+          let params = {
+            voltage: 0,
+            angle: 0,
+            resistance: usePredefinedLoad 
+                ? parseFloat(document.getElementById('loadR').value) || 0 
+                : parseFloat(document.getElementById('resistance').value) || 0,
+            reactance: usePredefinedLoad 
+                ? parseFloat(document.getElementById('loadX').value) || 0 
+                : parseFloat(document.getElementById('reactance').value) || 0,
+            group: usePredefinedLoad 
+                ? parseInt(document.getElementById('loadSelect').value) || 0 
+                : 0
+          };
+          
+          newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
+          components.push(newComponent);
+          
         } else if (mode === 'connection') {
           let params = { voltage: 0, angle: 0, resistance: 0, reactance: 0 };
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
@@ -701,6 +738,16 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
       }
     }
     
+    /*
+     * Before calling calculateCircuit() save the config to localStorage.
+     */
+    function calculateCircuitPrep(){
+      
+        let config = getConfig();
+        localStorage.setItem('circuitConfig', JSON.stringify(config));
+        
+        calculateCircuit();
+    }
 /*
  * 
  * 
@@ -983,9 +1030,8 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
 
 //##############################################################################
 
-
-    async function saveConfig() {
-      let config = {
+    function getConfig(){
+        let config = {
         nodes: nodes.map(n => ({ x: n.x, y: n.y, isGround: n.isGround, nodeId: n.nodeId !== null ? n.nodeId : nodes.indexOf(n) })),
         components: components.map(c => ({
           componentId: c.index,
@@ -998,6 +1044,13 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
           endNode: { nodeId: c.endNode.nodeId !== null ? c.endNode.nodeId : nodes.indexOf(c.endNode) }
         }))
       };
+      
+      return config;
+    }
+
+
+    async function saveConfig() {
+      let config = getConfig();
       logger('debug', 'Nodes before download:', nodes.map((n, i) => `N${i}: isGround=${n.isGround}, x=${n.x}, y=${n.y}, nodeId=${n.nodeId}`));
       let data = JSON.stringify(config, null, 2);
       try {
@@ -1033,60 +1086,75 @@ logger('debug', 'MousePressed: 397 ', event.target.tagName);
     function loadConfig(event) {
       let file = event.target.files[0];
       if (!file) return;
+      
       let reader = new FileReader();
       reader.onload = function(e) {
-        let config = JSON.parse(e.target.result);
-          nodes = config.nodes.map((n, index) => {
-          if (n.nodeId === undefined) {
-            console.error(`Node ID undefined: ${index}`);
-            return null;
-          }
-          let nodeId = n.nodeId ;
-          let node = new Node(n.x, n.y, n.isGround, nodeId);
-          nodeMap.set(node, index);
-          return node;
-        });
-        components = config.components.map(c => {
-          let startNodeId = c.startNode.nodeId;
-          let endNodeId = c.endNode.nodeId;
-          let startNode = null;
-          let endNode = null;
-          nodes.forEach((n, i) => {
-            if (startNodeId === n.nodeId){
-                startNode = n;
-            }
-            if (endNodeId === n.nodeId){
-                endNode = n;
-            }
-          });
+       
+        try {
+          const config = JSON.parse(e.target.result);
+          applyConfig(config);
+        } catch (err) {
+          console.error('Error parsing config:', err);
+          alert('Invalid JSON config:\n' + err.message);
+        }
           
-          if (!startNode || !endNode) {
-            console.error(`Node ID mismatch: componentId=${c.componentId}, startNodeId=${startNodeId}, endNodeId=${endNodeId}`);
-            return null; // Skip invalid components
-          }
-          
-          let newComponent = new Component(c.x, c.y, c.type, c.params, startNode, endNode);
-          newComponent.rotation = c.rotation;
-          // Populate connectedNodeList for both nodes
-          startNode.addConnectedNode(endNode);
-          endNode.addConnectedNode(startNode);
-          return newComponent;
-        }).filter(c => c !== null); // Remove invalid components
-//      nodeMap.clear();
-        componentMap.clear();
-
-        components.forEach((c, i) => {
-          c.index = i;
-          componentMap.set(c.index, c);
-        });
-        logger('debug', 'Loaded nodes:', nodes.map(n => `nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
-        document.getElementById('configFile').value = '';
-        redraw();
       };
       reader.readAsText(file);
     }
 
 
+    function applyConfig(config){
+        
+      nodes = config.nodes.map((n, index) => {
+        if (n.nodeId === undefined) {
+          console.error(`Node ID undefined: ${index}`);
+          return null;
+        }
+        let nodeId = n.nodeId ;
+        let node = new Node(n.x, n.y, n.isGround, nodeId);
+        nodeMap.set(node, index);
+        return node;
+      });
+      components = config.components.map(c => {
+        let startNodeId = c.startNode.nodeId;
+        let endNodeId = c.endNode.nodeId;
+        let startNode = null;
+        let endNode = null;
+        nodes.forEach((n, i) => {
+          if (startNodeId === n.nodeId){
+              startNode = n;
+          }
+          if (endNodeId === n.nodeId){
+              endNode = n;
+          }
+        });
+        
+        if (!startNode || !endNode) {
+          console.error(`Node ID mismatch: componentId=${c.componentId}, startNodeId=${startNodeId}, endNodeId=${endNodeId}`);
+          return null; // Skip invalid components
+        }
+        
+        let newComponent = new Component(c.x, c.y, c.type, c.params, startNode, endNode);
+        newComponent.rotation = c.rotation;
+        // Populate connectedNodeList for both nodes
+        startNode.addConnectedNode(endNode);
+        endNode.addConnectedNode(startNode);
+        return newComponent;
+      }).filter(c => c !== null); // Remove invalid components
+//      nodeMap.clear();
+      componentMap.clear();
+
+      components.forEach((c, i) => {
+        c.index = i;
+        componentMap.set(c.index, c);
+      });
+      logger('debug', 'Loaded nodes:', nodes.map(n => `nodeId=${n.nodeId}, x=${n.x}, y=${n.y}, isGround=${n.isGround}`));
+      document.getElementById('configFile').value = '';
+      redraw();
+        
+    }
+    
+    
 //==============================================================================
 //
 // Test MNA matrix

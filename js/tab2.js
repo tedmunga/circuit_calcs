@@ -5,6 +5,9 @@ const CableTab = {
     
     init(){
         this.groupCounter = 1;
+        
+        const data = JSON.parse(localStorage.getItem('cableConfig') || "[]");
+        data.forEach(d => CableTab.addCableRow(d));
     },
 
     addCableRow(data = null) {
@@ -44,13 +47,13 @@ const CableTab = {
         <td>
           <select class="temp">${temps.map(t => `<option value="${t}" ${t === temp ? 'selected' : ''}>${t}</option>`).join('')}</select>
         </td>
-        <td class="r">0</td>
         <td>
           <select class="form">${forms.map(t => `<option value="${t}" ${t === form ? 'selected' : ''}>${t}</option>`).join('')}</select>
         </td>
         <td>
           <select class="insulation">${insulations.map(t => `<option value="${t}" ${t === insulation ? 'selected' : ''}>${t}</option>`).join('')}</select>
         </td>
+        <td class="r">0</td>
         <td class="x">0</td>
         <td class="total-r">0</td>
         <td class="total-x">0</td>
@@ -63,6 +66,24 @@ const CableTab = {
         el.addEventListener('change', () => CableTab.updateRow(row));
       });
     },
+
+
+    getJsonData() {
+      const rows = [...document.querySelectorAll('#cableTable tbody tr')];
+      const data = rows.map(row => ({
+//        groupId: row.cells[0].textContent,
+        description: row.querySelector('.description').value,
+        length: row.querySelector('.length').value,
+        size: row.querySelector('.size').value,
+        type: row.querySelector('.type').value,
+        temp: row.querySelector('.temp').value,
+        form: row.querySelector('.form').value,
+        insulation: row.querySelector('.insulation').value
+      }));
+      
+      return data;
+    },
+        
 
     updateRow(row) {
       const length = parseFloat(row.querySelector('.length').value) || 0;
@@ -79,28 +100,24 @@ const CableTab = {
       row.querySelector('.x').textContent = X;
       row.querySelector('.total-r').textContent = (R * length/1000).toFixed(3);
       row.querySelector('.total-x').textContent = (X * length/1000).toFixed(3);
+      
+      // Save the data to localStorage so the user doesn't lose work from a 
+      // Browser shutdown etc.
+      const data = CableTab.getJsonData();
+      localStorage.setItem('cableConfig', JSON.stringify(data));
       updateGroupDropdownFromTable();
     },
 
-    saveConfig() {
-      const rows = [...document.querySelectorAll('#cableTable tbody tr')];
-      const data = rows.map(row => ({
-        groupId: row.cells[0].textContent,
-        description: row.querySelector('.description').value,
-        length: row.querySelector('.length').value,
-        size: row.querySelector('.size').value,
-        type: row.querySelector('.type').value,
-        temp: row.querySelector('.temp').value,
-        form: row.querySelector('.form').value,
-        insulation: row.querySelector('.insulation').value
-      }));
 
+    saveConfig() {
+      const data = CableTab.getJsonData();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'cable_config.json';
       a.click();
     },
+
 
     loadConfig(event) {
       const file = event.target.files[0];
