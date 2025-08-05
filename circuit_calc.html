@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Circuit Diagram Builder</title>
+<!--
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+-->
+  <script src="lib/p5.min.js"></script>
+  <script src="js/log.js"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+  <style>
+
+
+
+  </style>
+</head>
+<body>
+    <div class="tab-buttons">
+        <div class="tab-left">
+          <button onclick="showTab('tab1')" class="active">Circuit Builder</button>
+          <button onclick="showTab('tab2')">Cable Groups</button>
+          <button onclick="showTab('tab3')">Loads</button>
+        </div>
+        <div class="tab-info">
+        <span>Electrical Calculations v0.1</span>
+      </div>
+    </div>
+    
+    
+<!--
+      Tab one is where you build you circuit 
+-->
+    <div id="tab1" class="tab-content active">
+        
+        <div class="fixed-panel">
+            <div id="controls">
+              <button onclick="setMode('voltage')">Add Voltage Source</button>
+              <button onclick="setMode('conductor')">Add Conductor</button>
+              <button onclick="setMode('load')">Add Load</button>
+              <button onclick="setMode('connection')">Add Connection</button>
+              <button onclick="rotateSelected()">Rotate Selected</button>
+              <button onclick="disconnectSelectedNode()">Disconnect Selected</button>
+              <button onclick="deleteSelected()">Delete Selected</button>
+              <button onclick="calculateCircuit()">Calculate</button>
+              <button onclick="toggleResults()">Toggle Results</button>
+              <button onclick="getNextUnusedNodeId()">Next Node #</button>
+              <button onclick="getNextUnusedComponentId()">Next Component #</button>
+              <button onclick="saveConfig()">Save Config</button>
+              <input type="file" id="configFile" accept=".json" onchange="loadConfig(event)" style="display: none;">
+              <button onclick="document.getElementById('configFile').click()">Load Config</button>
+              <button onclick="deleteAll()">Delete All</button>
+              <div>
+                <label>Voltage (V): <input class=circuit_input id="vMag" type="number" value=""></label>
+                <label>Angle (°): <input class=circuit_input id="vAngle" type="number" value=""></label>
+              </div>
+              <div>
+                <label>Resistance (Ω): <input class=circuit_input id="resistance" type="number" value="0"></label>
+                <label>Reactance (Ω): <input class=circuit_input id="reactance" type="number" value="0"></label>
+              </div>
+              <div id="groupSelector">
+                <label>Use Group Cable: <input class=groupCheckBox id="groupCableCheckBox" type="checkbox"></label>
+                  <select id="groupSelect">
+                    <option value="" disabled>-- Select --</option>
+                </select>
+                <label>R(Ω): <input class=circuit_input id="groupCableR" type="number" value="" disabled></label>
+                <label>X(Ω): <input class=circuit_input id="groupCableX" type="number" value="" disabled></label>
+              </div>
+              <div id="loadSelector">
+                <label>Use Load: <input class=loadCheckBox id="loadCheckBox" type="checkbox"></label>
+                  <select id="loadSelect">
+                    <option value="" disabled>-- Select --</option>
+                </select>
+                <label>R(Ω): <input class=load_input id="loadR" type="number" value="" disabled></label>
+                <label>X(Ω): <input class=load_input id="loadX" type="number" value="" disabled></label>
+              </div>
+            </div>
+        </div>
+        <div id="canvas-container"></div>
+        <script src="js/tab1.js"></script>
+    </div>
+
+<!--
+      Tab two create your cable segments/groups 
+-->
+    <div id="tab2" class="tab-content">
+<!--
+        Load up the script files for the AS3008 table data.
+-->
+        <script src="data/table_34.js"></script>
+        <script src="data/table_30.js"></script>
+        <script src="js/tab2.js"></script>
+        
+        <h2>Cable Selection Table</h2>
+
+        <div class="controls">
+          <button onclick="CableTab.addCableRow()">Add Cable</button>
+          <button onclick="CableTab.saveConfig()">Save Config</button>
+          <input type="file" id="cableConfigLoader" style="display:none;" onchange="CableTab.loadConfig(event)">
+          <button onclick="document.getElementById('cableConfigLoader').click()">Load Config</button>
+        </div>
+
+        <table id="cableTable">
+          <thead>
+            <tr>
+              <th>Group ID</th>
+              <th>Description</th>
+              <th>Length (m)</th>
+              <th>Size</th>
+              <th>Type</th>
+              <th>Temp</th>
+              <th>R(Ω)</th>
+              <th>Formation Type</th>
+              <th>Insulation</th>
+              <th>X(Ω)</th>
+              <th>Total R(Ω)</th>
+              <th>Total X(Ω)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+    </div>
+
+    <div id="tab3" class="tab-content">
+        
+        <h2>Load Selection Table</h2>
+
+        <div class="controls" style="display: flex;">
+           <div style="flex: 2;">
+              <button onclick="LoadTab.addLoadRow()">Add Load</button>
+              <button onclick="LoadTab.saveConfig()">Save Config</button>
+              <input type="file" id="loadConfigLoader" style="display:none;" onchange="LoadTab.loadConfig(event)">
+              <button onclick="document.getElementById('loadConfigLoader').click()">Load Config</button>
+          </div>
+          <div style="flex: 3; text-align: right;">
+            <button onclick="LoadTab.addLoadToTable()">Add Load to Table</button>
+            <label>Voltage (V): <input class=load_input id="voltage" type="number" value="230"></label>
+            <label>Power (W): <input class=load_input id="power" type="number" value="0"></label>
+            <label>Power Factor: <input class=load_input id="power_factor" type="number" value="0.9"></label>
+            <label>Resistance (Ω): <input class=load_input id="resistance_2" type="number" value="0" disabled></label>
+            <label>Reactance (Ω): <input class=load_input id="reactance_2" type="number" value="0" disabled></label>
+          </div>
+        </div>
+
+        <table id="loadTable">
+          <thead>
+            <tr>
+              <th>Load ID</th>
+              <th>Description</th>
+              <th>R(Ω)</th>
+              <th>X(Ω)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+    </div>
+    <script src="js/tab3.js"></script>
+    
+  <script>
+    LoadTab.init();
+  </script>
+</body>
+</html>
