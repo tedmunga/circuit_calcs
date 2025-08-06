@@ -33,6 +33,7 @@ function getConfig(nodes, components) {
 
 function applyConfig(config) {
   const nodeMap = new Map();
+  const componentMap = new Map();
   const nodes = config.nodes.map(n => {
     const node = new Node(n.x, n.y, n.isGround, n.nodeId);
     nodeMap.set(n.nodeId, node);
@@ -48,8 +49,9 @@ function applyConfig(config) {
     comp.rotation = c.rotation;
     startNode.addConnectedNode(endNode);
     endNode.addConnectedNode(startNode);
+    componentMap.set(comp.index, comp)
     return comp;
   }).filter(Boolean);
 
-  return [nodes, components];
+  return [nodes, nodeMap, components, componentMap];
 }

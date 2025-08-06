@@ -400,7 +400,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         logger('info', 'Applying config:', config);
         let data = applyConfig(config);
         nodes = data[0];
-        components = data[1];
+        nodeMap = data[1];
+        components = data[2];
+        componentMap = data[3];
       }
       redraw();
       
@@ -738,7 +740,9 @@ async function loadConfig(event) {
   try {
     const data = loadConfigFromText(text);
     nodes = data[0];
-    components = data[1];
+    nodeMap = data[1];
+    components = data[2];
+    componentMap = data[3];
     redraw();
   } catch (err) {
     console.error('Invalid config:', err);
