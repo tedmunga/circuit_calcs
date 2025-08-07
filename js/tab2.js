@@ -23,7 +23,7 @@ const CableTab = {
       const forms = Object.keys(table_30[sizes[0]]);
       const insulations = Object.keys(table_30[sizes[0]][forms[0]]);
 
-      const groupId = data?.groupId ?? CableTab.getFirstAvailableCableId();
+      const cableId = data?.cableId ?? CableTab.getFirstAvailableCableId();
       const description = data?.description || "";
       const length = data?.length || '';
       const size = data?.size || sizes[0];
@@ -34,7 +34,7 @@ const CableTab = {
 
       row.innerHTML = `
         <td class="c_check_td"><input type="checkbox" class="row-select"></td>
-        <td class="c_id_td">${groupId}</td>
+        <td class="c_id_td">${cableId}</td>
         <td><input type="text" class="description" value="${description}"></td>
         <td><input type="number" class="length" value="${length}"></td>
         <td>
@@ -93,19 +93,19 @@ const CableTab = {
       
     },
     
-    saveUpdatedTable(){
+    saveUpdatedTable(row){
       // Save the data to localStorage so the user doesn't lose work from a 
       // Browser shutdown etc.
       const data = CableTab.getJsonData();
       localStorage.setItem('cableConfig', JSON.stringify(data));
       // Update the dropdown list on Tab 1.
-      updateGroupDropdownFromTable();
+      updateCableDropdownFromTable(row);
     },
 
     getJsonData() {
       const rows = [...document.querySelectorAll('#cableTable tbody tr')];
       const data = rows.map(row => ({
-        groupId: row.cells[1].textContent,
+        cableId: row.cells[1].textContent,
         description: row.querySelector('.description').value,
         length: row.querySelector('.length').value,
         size: row.querySelector('.size').value,
@@ -135,7 +135,7 @@ const CableTab = {
       row.querySelector('.total-r').textContent = (R * length/1000).toFixed(3);
       row.querySelector('.total-x').textContent = (X * length/1000).toFixed(3);
       
-      CableTab.saveUpdatedTable();
+      CableTab.saveUpdatedTable(row);
     },
 
 

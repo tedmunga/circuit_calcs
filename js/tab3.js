@@ -124,12 +124,12 @@ const LoadTab = {
       return data;
     },
 
-    updateRow() {
+    updateRow(row) {
 
       const data = LoadTab.getJsonData();
       localStorage.setItem('loadConfig', JSON.stringify(data));
       
-      updateLoadDropdownFromTable();
+      updateLoadDropdownFromTable(row);
     },
 
 

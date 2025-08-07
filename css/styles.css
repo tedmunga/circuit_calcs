@@ -20,13 +20,13 @@ body {
 .l_id_td, .l_check_td, .c_id_td, .c_check_td {
   text-align: center;
 }
-.groupCheckBox, .loadCheckBox {
+.cableCheckBox, .loadCheckBox {
   width: 10px;
   align-items: center;
   margin-right: 20px;
 }
 
-#groupSelect,
+#cableSelect,
 #loadSelect {
   width: 40px;
 }
@@ -180,7 +180,7 @@ input {
 }
 
 /* Style the tab content */
-.tabcontent {
+.tab-content {
     display: none;
     padding: 3px 6px;
     border: 1px solid #f1f1f1;
@@ -188,6 +188,16 @@ input {
 }
 
 /* Make all the input fields have a light yellow background */
+td.arrow {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+#efliTable {
+  table-layout: fixed;
+}
+
 #efliTable input:not([disabled])[type="number"] {
     background-color : #FFFFCC;
     border-color: #f1f1f1;

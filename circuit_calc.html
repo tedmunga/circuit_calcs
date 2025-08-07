@@ -5,13 +5,15 @@
   <title>Circuit Diagram Builder</title>
 <!--
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 -->
   <script src="lib/p5.min.js"></script>
+  <script src='lib/MathJax-2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+  <script>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, displayAlign: "left", processEscapes: true })</script>
   <script src="js/log.js"></script>
+  
   <link rel="stylesheet" href="./css/styles.css">
   <style>
-
-
 
   </style>
 </head>
@@ -21,6 +23,7 @@
       <button onclick="showTab('tab1')" class="active">Circuit Builder</button>
       <button onclick="showTab('tab2')">Cable Groups</button>
       <button onclick="showTab('tab3')">Loads</button>
+      <button onclick="showTab('tab4')">EFLI</button>
     </div>
     <div class="tab-info">
     <span>Electrical Calculations v0.1</span>
@@ -57,13 +60,13 @@
           <label>Resistance (Ω): <input class=circuit_input id="resistance" type="number" value="0"></label>
           <label>Reactance (Ω): <input class=circuit_input id="reactance" type="number" value="0"></label>
         </div>
-        <div id="groupSelector">
-          <label>Use Group Cable: <input class=groupCheckBox id="groupCableCheckBox" type="checkbox"></label>
-          <select id="groupSelect" disabled>
+        <div id="cableSelector">
+          <label>Use Group Cable: <input class=cableCheckBox id="cableCheckBox" type="checkbox"></label>
+          <select id="cableSelect" disabled>
             <option value="">-- Select --</option>
           </select>
-          <label>R(Ω): <input class=circuit_input id="groupCableR" type="number" value="" disabled></label>
-          <label>X(Ω): <input class=circuit_input id="groupCableX" type="number" value="" disabled></label>
+          <label>R(Ω): <input class=circuit_input id="cableR" type="number" value="" disabled></label>
+          <label>X(Ω): <input class=circuit_input id="cableX" type="number" value="" disabled></label>
         </div>
         <div id="loadSelector">
           <label>Use Load: <input class=loadCheckBox id="loadCheckBox" type="checkbox"></label>
@@ -106,7 +109,7 @@
       <thead>
         <tr>
           <th>Check</th>
-          <th>Group ID</th>
+          <th>Cable ID</th>
           <th>Description</th>
           <th class="length_input">Length (m)</th>
           <th>Size</th>
@@ -163,8 +166,106 @@
     </table>
     
   </div>
-  
   <script src="js/tab3.js"></script>
+  
+  <div id="tab4" class="tab-content">
+      <h3>Earth Fault Loop Impedance</h3>
+      <p align="left">$$ L_{max} = {0.8\cdot U_o\cdot S_{ph}\cdot S_{pe} \over I_a\cdot\rho\cdot(S_{ph}+S_{pe})}
+          \Longrightarrow S_{pe} = {L_{max}\cdot I_a\cdot\rho\cdot S_{ph} \over (0.8\cdot U_o\cdot
+          S_{ph})-(L_{max}\cdot I_a\cdot\rho)}$$ </p>
+      <p>Earth Fault Loop Impedance based on AS 3000 B5.2.2 Calculation method.</p>
+      <hr>
+      <table id="efliTable" class="efliTable">
+          <colgroup>
+            <col style="width: 5%;">   <!-- first column (empty or Ia) -->
+            <col style="width: 20%;">  <!-- label + input -->
+            <col style="width: 2%;">   <!-- arrow -->
+            <col style="width: 63%;">  <!-- label + input -->
+          </colgroup>
+          <tr>
+              <td></td>
+              <td><label for="lmax">Circuit Length $(m)$:</label><input type="number" id="lmax" name="lamx" value="200" onchange="calculateEFLI()"></td>
+              <td class="arrow">$\Longrightarrow$</td>
+              <td><label for="mes">$S_{pe}$ Min Earth Size $(mm^2)$:</label><input type="text" id="mes" name="mes" accept-charset="utf-8"  disabled></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="0.8">80% assumed voltage:</label><input type="number" id="0.8" name="0.8" value="0.8" disabled></td>
+              <td class="arrow"></td>
+              <td><label for="mesxl">$S_{pe}$ Min Earth size /w $X_L (mm^2)$:</label><input type="text" id="mesxl" name="mesxl" accept-charset="utf-8" disabled></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="Uo">Nominal Voltage $U_o$:</label><input type="number" id="Uo" name="Uo" value="230" disabled></td>
+              <td class="arrow"></td>
+              <td><label for="table5.1">AS3000 Table 5.1 $(mm^2)$:</label><input class="blue" type="text" id="table5.1" name="table5.1" accept-charset="utf-8" disabled></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="SphP">No. $S_{ph}$ condutors in parallel:</label><input type="number" id="SphP" name="SphP" value="1" onchange="calculateEFLI()"></td>
+              <td class="arrow"></td>
+              <td></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="Sph">Active size $S_{ph} (mm^2)$:</label><input type="number" id="Sph" name="Sph" value="70" onchange="calculateEFLI()"></td>
+              <td class="arrow"></td>
+              <td><label for="melxl">$L_{max}$ Max Earth Length /w $X_L (m)$:</label><input type="number" id="melxl" name="melxl" disabled></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="Spe">Earth size $S_{pe} (mm^2)$:</label><input type="number" id="Spe" name="Spe" value="25" onchange="calculateEFLI()"></td>
+              <td class="arrow">$\Longrightarrow$</td>
+              <td><label for="mel">$L_{max}$ Max Earth Length $(m)$:</label><input type="number" id="mel" name="mel" disabled></td>
+          </tr>
+          <tr>
+              <td rowspan="2" style="text-align: right;">$I_a$</td>
+              <td><label for="CBsize">CB Size (A):</label><input type="number" id="CBsize" name="CBsize" value="100" onchange="calculateEFLI()"></td>
+              <td class="arrow"></td> 
+              <td><label for="thr">AS3000 Cl 5.3.3.1.3 $(mm^2)$:</label><input class="blue" type="number" id="thr" name="thr" disabled></td>
+          </tr>
+          <tr>
+              <td><label for="CBtype">CB Type:</label><input title="AS3000:2018 Page 449
+  C/B Type B = 4
+  C/B Type C = 7.5
+  C/B Type D = 12.5
+
+  AS60898.1 Cl 5.3.5
+  Type B: 3ln >= 5ln
+  Type C: 5ln >= 10ln
+  Type D: 10ln >= 20ln" type="number" id="CBtype" name="CBtype" value="4" onchange="calculateEFLI()"></td>
+              <td class="arrow"></td>
+              <td><label for="kConst">AS3008 K Constant:</label><input title="K Constant is derived from AS3008 Tables 52 & 53" type="number" id="kConst" name="kConst" value="147" onchange="calculateEFLI()"></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="rhoPh">$\rho_{ph}$:</label><select type="number" name="rhoPh" id="rhoPh" onchange="calculateEFLI()">
+                      <option value="0.0225">Copper</option>
+                      <option value="0.036">Aluminimum</option>
+                    </select></td>
+              <td class="arrow"></td>
+              <td><label for="faultCurrent">Fault current $(A)$:</label></label><input type="number" id="faultCurrent" name="faultCurrent" value="10000" onchange="calculateEFLI()"></td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><label for="rhoPe">$\rho_{pe}$:</label><select type="number" name="rhoPe" id="rhoPe" onchange="calculateEFLI()">
+                      <option value="0.0225">Copper</option>
+                      <option value="0.036">Aluminimum</option>
+                    </select></td>
+              <td class="arrow"></td>
+              <td><label for="disconnectTime">Disconnect Time t $(s)$:</label><input title="AS3000: Cls 5.3.3.1.3
+                  Only valid for disconnection times not \< 0.1s and not \> 5s" type="number" id="disCon" name="disCon" value="0.4" onchange="calculateEFLI()"></td>
+          </tr>
+          <tr>
+              <td colspan="4"><label class="unstyled" for="footnote">† A larger earthing conductor may be required to satisfy Clause 5.3.3.1.1.</label>
+              
+          </tr>
+      </table>
+
+  </div>
+  <script src="data/cableData.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="js/efli.js"></script>
   <script>
     CableTab.init();
     LoadTab.init();

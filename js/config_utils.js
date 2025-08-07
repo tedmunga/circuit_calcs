@@ -1,7 +1,21 @@
 function loadConfigFromText(jsonText) {
-  const config = JSON.parse(jsonText);
-  return applyConfig(config);
+    logger('debug', 'Entering from loadConfigFromText()');
+  try {
+    const config = JSON.parse(jsonText);
+
+    // Optional: basic validation
+    if (!config || typeof config !== 'object') {
+      console.error('Parsed config is not an object:', config);
+      return false;
+    }
+    logger('debug', 'Returning from loadConfigFromText()');
+    return applyConfig(config);
+  } catch (err) {
+    console.error('Failed to load config JSON:', err.message);
+    return false; // or null, or throw again, depending on your needs
+  }
 }
+
 
 function saveConfigToBlob(nodes, components) {
   const config = getConfig(nodes, components);
@@ -52,6 +66,6 @@ function applyConfig(config) {
     componentMap.set(comp.index, comp)
     return comp;
   }).filter(Boolean);
-
+  logger('debug', 'Returning from applyConfig()');
   return [nodes, nodeMap, components, componentMap];
 }

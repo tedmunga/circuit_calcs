@@ -2,7 +2,7 @@
     let components = [];
     let mode = 'select';
     let selectedComponent = null;
-    let useCableGroup = false;
+    let usePredefinedCable = false;
     let usePredefinedLoad = false;
     let dragging = false;
     let draggingNode = null;
@@ -24,28 +24,28 @@
     document.getElementById('vAngle').addEventListener('input', updateComponentParameters);
     document.getElementById('resistance').addEventListener('input', updateComponentParameters);
     document.getElementById('reactance').addEventListener('input', updateComponentParameters);
-//    document.getElementById('groupSelect').addEventListener('input', updateComponentParameters);
-//    document.getElementById('groupCableX').addEventListener('input', updateComponentParameters);
+//    document.getElementById('cableSelect').addEventListener('input', updateComponentParameters);
+//    document.getElementById('cableX').addEventListener('input', updateComponentParameters);
 
-document.getElementById('groupSelect').addEventListener('change', (e) => {
+document.getElementById('cableSelect').addEventListener('change', (e) => {
   const selectedId = e.target.value;
-  logger('debug', 'groupSelect value is: ', e.target.value);
+  logger('debug', 'cableSelect value is: ', e.target.value);
   const table = document.getElementById('cableTable');
   const rows = table.querySelectorAll('tbody tr');
 
   let found = false;
   rows.forEach(row => {
     if (row.cells[1].textContent.trim() === selectedId) {
-      document.getElementById('groupCableR').value = row.querySelector('.total-r').textContent.trim();
-      document.getElementById('groupCableX').value = row.querySelector('.total-x').textContent.trim();
+      document.getElementById('cableR').value = row.querySelector('.total-r').textContent.trim();
+      document.getElementById('cableX').value = row.querySelector('.total-x').textContent.trim();
       logger('debug', 'found value is: ', selectedId);
       found = true;
     }
   });
 
   if (!found) {
-    document.getElementById('groupCableR').value = '';
-    document.getElementById('groupCableX').value = '';
+    document.getElementById('cableR').value = '';
+    document.getElementById('cableX').value = '';
   }
   updateComponentParameters();
 });
@@ -74,40 +74,64 @@ document.getElementById('loadSelect').addEventListener('change', (e) => {
   updateComponentParameters();
 });
 
-document.getElementById('groupCableCheckBox').addEventListener('change', (e) => {
+document.getElementById('cableCheckBox').addEventListener('change', (e) => {
     document.getElementById('resistance').disabled = e.target.checked || usePredefinedLoad;
     document.getElementById('reactance').disabled = e.target.checked || usePredefinedLoad;
-    document.getElementById('groupSelect').disabled = !e.target.checked;
-    useCableGroup = e.target.checked;
+    document.getElementById('cableSelect').disabled = !e.target.checked;
+    usePredefinedCable = e.target.checked;
 });
 
 document.getElementById('loadCheckBox').addEventListener('change', (e) => {
-  const groupChecked = document.getElementById('groupCableCheckBox').checked;
-  document.getElementById('resistance').disabled = e.target.checked || useCableGroup;
-  document.getElementById('reactance').disabled = e.target.checked || useCableGroup;
+  document.getElementById('resistance').disabled = e.target.checked || usePredefinedCable;
+  document.getElementById('reactance').disabled = e.target.checked || usePredefinedCable;
   document.getElementById('loadSelect').disabled = !e.target.checked;
   usePredefinedLoad = e.target.checked;
 });
 
-  function updateGroupDropdownFromTable() {
+  function updateCableDropdownFromTable(row) {
+    
     const table = document.getElementById('cableTable');
-    const select = document.getElementById('groupSelect');
+    const select = document.getElementById('cableSelect');
     const rows = table.querySelectorAll('tbody tr');
 
     select.innerHTML = '<option value="">-- Select --</option>';
 
     rows.forEach(row => {
-      const groupId = row.cells[1].textContent.trim();
+      const groupId = row.cells[1]?.textContent.trim();  // label cell
+      const descInput = row.cells[2]?.querySelector('input');
+      const description = descInput?.value.trim() || '';
+
       if (groupId) {
         const option = document.createElement('option');
         option.value = groupId;
-        option.textContent = groupId;
+        option.textContent = `${groupId} - ${description || '(no description)'}`;
         select.appendChild(option);
       }
     });
+    
+    const cableId = parseInt(row.cells[1]?.textContent.trim(), 10);
+    const resistance = parseFloat(row.querySelector('.total-r')?.textContent.trim());
+    const reactance = parseFloat(row.querySelector('.total-x')?.textContent.trim());
+
+    components.forEach(component => {
+      logger('info', 'updating cable components',
+              component.type,
+              cableId, typeof cableId,
+              component.params.cable, typeof component.params.cable
+            );
+      if (component.type === 'conductor' && component.params.cable === cableId) {
+        logger('info', 'updating cable components', cableId, component.params.cable, component.R);
+        component.params.resistance = resistance;
+        component.params.reactance = reactance;
+        logger('info', 'updating cable components', component.index, component.R );
+        if (component.refresh) component.redraw();
+      }
+    });
+
   }
 
-  function updateLoadDropdownFromTable() {
+  function updateLoadDropdownFromTable(row) {
+    
     const table = document.getElementById('loadTable');
     const select = document.getElementById('loadSelect');
     const rows = table.querySelectorAll('tbody tr');
@@ -115,15 +139,31 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     select.innerHTML = '<option value="">-- Select --</option>';
 
     rows.forEach(row => {
-      const loadId = row.cells[1].textContent.trim();
+      const loadId = row.cells[1]?.textContent.trim();  // label cell
+      const descInput = row.cells[2]?.querySelector('input');
+      const description = descInput?.value.trim() || '';
+
       if (loadId) {
         const option = document.createElement('option');
         option.value = loadId;
-        option.textContent = loadId;
+        option.textContent = `${loadId} - ${description || '(no description)'}`;
         select.appendChild(option);
       }
     });
-  }
+    
+    const loadId = parseInt(row.cells[1]?.textContent.trim(), 10);
+    const resistance = parseFloat(row.cells[3]?.querySelector('input')?.value);
+    const reactance = parseFloat(row.cells[4]?.querySelector('input')?.value);
+logger('info', 'updating load components', loadId);
+    components.forEach(component => {
+      if (component.type === 'load' && component.params.load === loadId) {
+        component.params.resistance = resistance;
+        component.params.reactance = reactance;
+        if (component.refresh) component.redraw(); // optional redraw
+      }
+    });
+  
+  } 
 
   function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -148,6 +188,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       }
 
       draw() {
+        logger('debug' , "=== Node draw function called ===");
         fill(this.isGround ? 'green' : 'black');
         noStroke();
         ellipse(this.x, this.y, 8, 8);
@@ -174,6 +215,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         this.index = (index === null) ? getNextUnusedComponentId() : index;
       }
       draw() {
+        logger('debug' , "=== Component draw function called ===");
         // Set stroke color for the line based on selection
         stroke(selectedComponent === this ? 'purple' : 0); // Blue when selected, black otherwise
         strokeWeight(2); // Optional: Increase line thickness for visibility
@@ -188,8 +230,10 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         // noStroke(); // Uncomment if you don't want an outline on the body
 
         if (this.type === 'voltage') {
-          let fillColour = phaseColourMap.get(this.params.angle)[0];
-          let textColour = phaseColourMap.get(this.params.angle)[1];
+          let fillColour = phaseColourMap.get(Number(this.params.angle))?.[0] || 'black';
+          let textColour = phaseColourMap.get(Number(this.params.angle))?.[1] || 'white';
+          // let fillColour = phaseColourMap.get(this.params.angle)[0] || 'black';
+          // let textColour = phaseColourMap.get(this.params.angle)[1] || 'white';
           fill(selectedComponent === this ? 'purple' : fillColour);
           stroke(0);
           strokeWeight(1);
@@ -221,8 +265,8 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           if (this.params.resistance !== 0 || this.params.reactance !== 0) {
             text(`R=${this.params.resistance.toFixed(3)}, X=${this.params.reactance.toFixed(3)}`, 0, -12);
           }
-          if (this.params.group !== undefined && this.params.group !== 0){
-            text(`G=${this.params.group}`, 0, -22);
+          if (this.params.cable !== undefined && this.params.cable !== 0){
+            text(`G=${this.params.cable}`, 0, -22);
           }
         } else if (this.type === 'load') {
           let tri_size = 12;
@@ -243,8 +287,8 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           if (this.params.resistance !== 0 || this.params.reactance !== 0) {
             text(`R=${this.params.resistance.toFixed(1)}, X=${this.params.reactance.toFixed(2)}`, 0, -20); // Above base
           }
-          if (this.params.group !== undefined && this.params.group !== 0){
-            text(`L=${this.params.group}`, 0, -32);
+          if (this.params.load !== undefined && this.params.load !== 0){
+            text(`L=${this.params.load}`, 0, -32);
           }
         } else if (this.type === 'connection') {
           // nothing to do here just yet.
@@ -314,15 +358,16 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       let params = {
         voltage: parseFloat(document.getElementById('vMag').value) || 0,
         angle: parseFloat(document.getElementById('vAngle').value) || 0,
-        resistance: useCableGroup 
-            ? parseFloat(document.getElementById('groupCableR').value) || 0 
+        resistance: usePredefinedCable 
+            ? parseFloat(document.getElementById('cableR').value) || 0 
             : parseFloat(document.getElementById('resistance').value) || 0,
-        reactance: useCableGroup 
-            ? parseFloat(document.getElementById('groupCableX').value) || 0 
+        reactance: usePredefinedCable 
+            ? parseFloat(document.getElementById('cableX').value) || 0 
             : parseFloat(document.getElementById('reactance').value) || 0,
-        group: useCableGroup 
-            ? parseInt(document.getElementById('groupSelect').value) || 0 
-            : 0
+        cable: usePredefinedCable 
+            ? parseInt(document.getElementById('cableSelect').value) || 0 
+            : 0,
+        load: 0
       };
       if (selectedComponent.type === 'load') {
         params.resistance = usePredefinedLoad
@@ -331,16 +376,18 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         params.reactance = usePredefinedLoad
             ? parseFloat(document.getElementById('loadX').value) || 0 
             : parseFloat(document.getElementById('reactance').value) || 0;
-        params.group = usePredefinedLoad
+        params.load = usePredefinedLoad
             ? parseInt(document.getElementById('loadSelect').value) || 0 
-            : 0
+            : 0;
       }
       if (selectedComponent.type === 'voltage') {
         params.resistance = 0;
         params.reactance = 0;
       }
-      console.log(`Updating ${selectedComponent.type} C${selectedComponent.index} params:`, params);
+      logger('info', `Updating ${selectedComponent.type} C${selectedComponent.index} params:`, params);
       selectedComponent.params = params;
+      document.getElementById('loadSelect').selectedIndex = 0;
+      document.getElementById('cableSelect').selectedIndex = 0;
       redraw();
     }
 
@@ -393,6 +440,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
       canvas.parent('canvas-container');
       textAlign(CENTER, CENTER);
       textFont('Courier New');
+      noLoop();
       //textFont('Arial'); // Set default font
       
       const config = JSON.parse(localStorage.getItem('circuitConfig') || "{}");
@@ -409,6 +457,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
     }
 
     function draw() {
+      logger('debug' , "=== main draw function called ===");
       background(255);
       stroke(200);
       strokeWeight(1)
@@ -452,7 +501,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
 
     function mousePressed(event) {
       if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height){
-          logger('debug', 'MousePressed: 361 returning');
+          logger('debug', 'MousePressed: out of range. returning');
            return;
       }
       let gridX = Math.round(mouseX / 20) * 20;
@@ -476,7 +525,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         }
         dragging = true;
         selectedComponent.nodesMoved = true;
-        logger('debug', `MousePressed: 384 Selected C${selectedComponent.index}, draggingNode N${nodeMap.get(draggingNode)} at (${draggingNode.x}, ${draggingNode.y})`);
+        logger('debug', `MousePressed: Selected C${selectedComponent.index}, draggingNode N${nodeMap.get(draggingNode)} at (${draggingNode.x}, ${draggingNode.y})`);
         document.getElementById('vMag').value = selectedComponent.params.voltage || 0;
         document.getElementById('vAngle').value = selectedComponent.params.angle || 0;
         document.getElementById('resistance').value = selectedComponent.params.resistance || 0;
@@ -515,9 +564,9 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
             angle: parseFloat(vAngle) || 0,
             resistance: 0,
             reactance: 0,
-            group: 0
+            cable: 0
           };
-          logger('debug', `Creating 421 voltage component with params:`, params);
+          logger('debug', `Creating voltage component with params:`, params);
           newComponent = new Component(gridX, gridY, mode, params, startNode, endNode);
           newComponent.endNode.isGround = true;
           components.push(newComponent);
@@ -526,14 +575,14 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           let params = {
             voltage: 0,
             angle: 0,
-            resistance: useCableGroup 
-                ? parseFloat(document.getElementById('groupCableR').value) || 0 
+            resistance: usePredefinedCable 
+                ? parseFloat(document.getElementById('cableR').value) || 0 
                 : parseFloat(document.getElementById('resistance').value) || 0,
-            reactance: useCableGroup 
-                ? parseFloat(document.getElementById('groupCableX').value) || 0 
+            reactance: usePredefinedCable 
+                ? parseFloat(document.getElementById('cableX').value) || 0 
                 : parseFloat(document.getElementById('reactance').value) || 0,
-            group: useCableGroup 
-                ? parseInt(document.getElementById('groupSelect').value) || 0 
+            cable: usePredefinedCable 
+                ? parseInt(document.getElementById('cableSelect').value) || 0 
                 : 0
           };
           
@@ -551,7 +600,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
             reactance: usePredefinedLoad 
                 ? parseFloat(document.getElementById('loadX').value) || 0 
                 : parseFloat(document.getElementById('reactance').value) || 0,
-            group: usePredefinedLoad 
+            load: usePredefinedLoad 
                 ? parseInt(document.getElementById('loadSelect').value) || 0 
                 : 0
           };
@@ -613,10 +662,10 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
           if (nodeMap.has(draggingNode.nodeId) && nodeMap.get(draggingNode.nodeId) !== draggingNode) {
             draggingNode.nodeId = getNextUnusedNodeId(nodeMap);
             nodeMap.set(draggingNode.nodeId, draggingNode);
-//            logger('debug', `Reassigned N${nearbyNode.nodeId} to N${draggingNode.nodeId} due to conflict`);
+            logger('debug', `Reassigned N${nearbyNode.nodeId} to N${draggingNode.nodeId} due to conflict`);
           }
           updateNodeMap();
-//          logger('debug', `Merged N${draggingNode.nodeId} into N${nearbyNode.nodeId}`);
+          logger('debug', `Merged N${draggingNode.nodeId} into N${nearbyNode.nodeId}`);
         }
       } else if (selectedComponent && mode === 'select') {
         let dx = gridX - selectedComponent.x;
@@ -680,6 +729,7 @@ document.getElementById('loadCheckBox').addEventListener('change', (e) => {
         const offset = 30;
 
         // Handle start node
+        logger('debug' , "Checking if start node is shared");
         if (components.some(other => other !== selectedComponent && (other.startNode === selectedComponent.startNode || other.endNode === selectedComponent.startNode))) {
           let newNodeId = getNextUnusedNodeId();
           newStartNode = new Node(compCenterX + offset, compCenterY, selectedComponent.startNode.isGround, newNodeId);
